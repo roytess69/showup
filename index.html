@@ -13,9 +13,9 @@
     <meta name="apple-mobile-web-app-title" content="ShowUp" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      html { -webkit-text-size-adjust: 100%; }
-      html, body, #root { margin: 0; padding: 0; height: 100%; background: #FAF7F1; overscroll-behavior: none; }
-      body { position: fixed; inset: 0; width: 100%; }
+      html { -webkit-text-size-adjust: 100%; min-height: -webkit-fill-available; }
+      html, body, #root { margin: 0; padding: 0; height: 100%; height: 100dvh; background: #FAF7F1; overscroll-behavior: none; }
+      body { overflow: hidden; width: 100%; }
       * { -webkit-tap-highlight-color: transparent; }
       button, input, a, [role="button"] { touch-action: manipulation; }
       input, select, textarea { font-size: 16px; }
@@ -23,6 +23,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // iOS standalone caches a stale viewport height per home-screen icon;
+      // measure the real one and let the app size itself from it.
+      const setH = () => document.documentElement.style.setProperty("--app-height", window.innerHeight + "px");
+      setH();
+      window.addEventListener("resize", setH);
+      window.addEventListener("orientationchange", () => setTimeout(setH, 250));
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
