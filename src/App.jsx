@@ -948,7 +948,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.9 · straight talk</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.9.1 · camera fixed</div>
       </div>
     </AuthShell>
   );
@@ -1124,7 +1124,7 @@ function CameraSheet({ onCapture, onClose }) {
           <img src={shot} alt="" className="absolute inset-0 w-full h-full object-cover" />
         )}
       </div>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+      <input ref={captureRef} type="file" accept="image/*" capture="user" className="hidden" onChange={onFile} />
       <div className="px-5 pt-3 shrink-0" style={{ paddingBottom: "calc(24px + env(safe-area-inset-bottom))" }}>
         {!shot ? (
           <div className="flex items-center justify-between">
@@ -2632,7 +2632,27 @@ function useViewportLock(rootRef, onStale) {
   }, []);
 }
 
-export default function App() {
+class CrashGuard extends React.Component {
+  constructor(p) { super(p); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  componentDidCatch(err, info) { try { console.error("ShowUp crash:", err, info); } catch (_) {} }
+  render() {
+    if (!this.state.err) return this.props.children;
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center px-8 text-center" style={{ background: "#FAF7F1", zIndex: 999, fontFamily: "system-ui" }}>
+        <div style={{ fontSize: 40 }}>🛠️</div>
+        <div className="text-base font-bold mt-3" style={{ color: "#20180F" }}>Something broke on this screen</div>
+        <div className="text-xs mt-3 px-3 py-2 rounded-lg text-left w-full overflow-auto" style={{ background: "#EFE9DD", color: "#8A2F1F", maxHeight: 130, fontFamily: "monospace" }}>
+          {String(this.state.err && this.state.err.message || this.state.err)}
+        </div>
+        <button onClick={() => window.location.reload()} className="mt-5 px-6 py-3 rounded-2xl text-sm font-bold" style={{ background: "#1E9E86", color: "#FFF", border: "none" }}>Reload ShowUp</button>
+        <div className="text-xs mt-3" style={{ color: "#8B8070" }}>Screenshot this and send it to Claude.</div>
+      </div>
+    );
+  }
+}
+
+function AppInner() {
   const rootRef = useRef(null);
   useViewportLock(rootRef, () => showToast("iOS cached an old screen size — remove the icon and re-add it once."));
   /* ── the core: one instance, survives rerenders ── */
@@ -2969,5 +2989,13 @@ export default function App() {
         <Toast toast={toast} />
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <CrashGuard>
+      <AppInner />
+    </CrashGuard>
   );
 }
