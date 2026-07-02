@@ -199,7 +199,7 @@ function PxAvatar({ user, size = 40, frame }) {
 function Toast({ toast }) {
   if (!toast) return null;
   return (
-    <div className="absolute left-4 right-4 flex justify-center pointer-events-none" style={{ bottom: "calc(96px + env(safe-area-inset-bottom))", zIndex: 90 }}>
+    <div className="fixed left-4 right-4 flex justify-center pointer-events-none" style={{ bottom: "calc(96px + env(safe-area-inset-bottom))", zIndex: 90 }}>
       <div className="px-4 py-2.5 text-sm font-semibold text-center rounded-full" style={{ ...TYPE, background: C.ink, color: C.paper, boxShadow: "0 10px 24px -8px rgba(32,26,18,0.5)", animation: "toastUp 0.25s ease both" }}>
         {toast}
       </div>
@@ -708,11 +708,11 @@ const SEED_POSTS = [
   { id: "p6", author: "omar", time: "9h", place: "Foothills", activity: "Walking", caption: "golden hour delivered", scene: 6, photo: "https://images.unsplash.com/photo-1483721310020-03333e577078?auto=format&fit=crop&w=800&h=1000&q=70", likes: 13, likedBy: "lena", liked: false, reactions: { "✨": 3 }, praised: false },
 ];
 const SEED_COMMENTS = {
-  p1: [{ id: 1, author: "sofia", text: "barely still counts 💪" }, { id: 2, author: "dev", text: "up we go" }],
-  p2: [{ id: 3, author: "maya", text: "@lena five-a-side fridays >>>" }, { id: 4, author: "jake", text: "ball knowledge" }, { id: 5, author: "dev", text: "W" }],
-  p3: [{ id: 6, author: "maya", text: "pool > legs, correct" }],
-  p4: [{ id: 7, author: "maya", text: "zen king" }],
-  p5: [{ id: 8, author: "sofia", text: "5am?? respect" }, { id: 9, author: "lena", text: "the consistency!!" }],
+  p1: [{ id: 1, author: "sofia", text: "barely still counts 💪", likes: 4, liked: false }, { id: 2, author: "dev", text: "up we go", likes: 1, liked: false }],
+  p2: [{ id: 3, author: "maya", text: "@lena five-a-side fridays >>>", likes: 6, liked: false }, { id: 4, author: "jake", text: "ball knowledge", likes: 2, liked: false }, { id: 5, author: "dev", text: "W", likes: 0, liked: false }],
+  p3: [{ id: 6, author: "maya", text: "pool > legs, correct", likes: 3, liked: false }],
+  p4: [{ id: 7, author: "maya", text: "zen king", likes: 2, liked: false }],
+  p5: [{ id: 8, author: "sofia", text: "5am?? respect", likes: 5, liked: false }, { id: 9, author: "lena", text: "the consistency!!", likes: 1, liked: false }],
 };
 const SEED_PROGRESS = { Golf: 500, Running: 34, Lifting: 12, Yoga: 7, Soccer: 6, Meditation: 4, Walking: 3, Swimming: 1 };
 const SEED_SUGGESTED = [
@@ -756,7 +756,7 @@ function HistorySheet({ st, onClose }) {
   const meta = MONTH_META[month];
   const entries = st.history[month] || {};
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ zIndex: 48, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
+    <div className="fixed inset-0 flex flex-col" style={{ zIndex: 48, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center">
@@ -830,7 +830,7 @@ const groupTrophies = (badges) => {
    made React remount the subtree on every keystroke (focus loss).   */
 function AuthShell({ children, onBack, progress }) {
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper }}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper }}>
       <div className="flex items-center h-12 px-2 shrink-0">
         {onBack && <button onClick={onBack} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={22} color={C.ink} /></button>}
         {progress != null && (
@@ -862,9 +862,11 @@ function OtpBoxes({ code, boxesRef, onType }) {
 }
 
 function AuthFlow({ core, onDone }) {
-  const [mode, setMode] = useState("welcome"); // welcome | su-contact | su-code | su-password | su-profile | li | forgot-code | forgot-new
+  const [mode, setMode] = useState("welcome"); // welcome | su-contact | su-code | su-password | su-username | li | forgot-code | forgot-new
   const [channel, setChannel] = useState("email");
   const [identity, setIdentity] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [err, setErr] = useState("");
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [cooldown, setCooldown] = useState(0);
@@ -881,8 +883,22 @@ function AuthFlow({ core, onDone }) {
   useEffect(() => { if (cooldown > 0) { const t = setTimeout(() => setCooldown(cooldown - 1), 1000); return () => clearTimeout(t); } }, [cooldown]);
 
   const idOk = channel === "phone" ? V.phone(identity.trim()) : V.email(identity.trim());
+  const emailOk = V.email(email.trim());
+  const phoneOk = V.phone(phone.trim());
+  const detailsOk = dname.trim().length > 0 && (emailOk || phoneOk);
   const pwOk = pw.length >= 8 && /\d/.test(pw);
   const unameFree = V.username(uname) && !core.db.usernames.has(uname);
+  const unameHint = `${(dname.trim().split(" ")[0] || "showup").toLowerCase().replace(/[^a-z0-9_]/g, "")}${Math.floor((uname.length + dname.length) * 7 % 90) + 10}`;
+  const startVerify = () => {
+    if (!detailsOk) { setErr(!dname.trim() ? "Add your name." : "Add a valid email or phone number."); return; }
+    const primary = emailOk ? email.trim() : phone.trim();
+    setChannel(emailOk ? "email" : "phone");
+    setIdentity(primary);
+    const r = core.otp.request(primary, emailOk ? "EMAIL" : "SMS");
+    if (!r.ok) { setErr(r.error); return; }
+    setErr(""); setCooldown(30); setCode(["", "", "", "", "", ""]); setMode("su-code");
+    setTimeout(() => boxes.current[0]?.focus(), 80);
+  };
 
   const sendCode = (nextMode) => {
     if (!idOk) { setErr(channel === "phone" ? "That number doesn't look right." : "That email doesn't look right."); return; }
@@ -907,10 +923,10 @@ function AuthFlow({ core, onDone }) {
   }, [code]); // eslint-disable-line
 
   const finishSignup = () => {
-    if (!dname.trim()) { setErr("Add your name."); return; }
     if (!V.username(uname)) { setErr("Username: 3–15 characters — letters, numbers, underscores."); return; }
-    if (core.db.usernames.has(uname)) { setErr(`@${uname} is taken — try ${uname}${Math.floor(Math.random() * 90) + 10}.`); return; }
-    core.registerCredentials(identity.trim(), pw, uname);
+    if (core.db.usernames.has(uname)) { setErr(`@${uname} is taken — tap the suggestion below.`); return; }
+    const ids = [emailOk ? email.trim() : null, phoneOk ? phone.trim() : null].filter(Boolean);
+    core.registerCredentials(ids.length ? ids : [identity.trim()], pw, uname);
     onDone({ identity: identity.trim(), channel, username: uname, name: V.clean(dname).slice(0, 30), photo });
   };
   const doLogin = () => {
@@ -932,28 +948,24 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.7 · public wall + mentions</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.8 · mobile-true</div>
       </div>
     </AuthShell>
   );
 
   if (mode === "su-contact") return (
     <AuthShell onBack={() => { setErr(""); setMode("welcome"); }} progress={0}>
-      <AuthH t="What's your contact?" s="We'll send a 6-digit code to verify it's really you." />
-      <div className="flex gap-2 mt-5">
-        {[["email", Mail, "Email"], ["phone", Smartphone, "Phone"]].map(([id, Icon, label]) => (
-          <button key={id} onClick={() => { setChannel(id); setErr(""); }} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-semibold active:scale-95 transition-transform" style={{ background: channel === id ? C.ink : C.field, color: channel === id ? "#FFF" : C.mute }}>
-            <Icon size={15} /> {label}
-          </button>
-        ))}
-      </div>
-      <div className="mt-3">
-        <PxInput autoFocus value={identity} inputMode={channel === "phone" ? "tel" : "email"} onChange={(e) => { setIdentity(e.target.value); setErr(""); }}
-          placeholder={channel === "phone" ? "+1 (208) 555-0134" : "you@example.com"} onKeyDown={(e) => e.key === "Enter" && sendCode("su-code")} />
+      <AuthH t="Let's get you in" s="Your name, plus at least one way to reach you." />
+      <div className="mt-5 flex flex-col gap-3">
+        <PxInput autoFocus value={dname} onChange={(e) => { setDname(e.target.value); setErr(""); }} placeholder="Full name" maxLength={30} />
+        <PxInput value={email} inputMode="email" onChange={(e) => { setEmail(e.target.value); setErr(""); }} placeholder="Email"
+          right={email.trim().length > 3 && (emailOk ? <Check size={16} color={C.green} /> : <X size={16} color={C.coral} />)} />
+        <PxInput value={phone} inputMode="tel" onChange={(e) => { setPhone(e.target.value); setErr(""); }} placeholder="Phone (optional if email given)"
+          right={phone.trim().length > 3 && (phoneOk ? <Check size={16} color={C.green} /> : <X size={16} color={C.coral} />)} />
       </div>
       <AuthErr err={err} />
-      <div className="mt-5"><PxButton full disabled={!idOk} onClick={() => sendCode("su-code")}>Send verification code</PxButton></div>
-      <div className="text-xs mt-4 leading-relaxed" style={{ color: C.faint }}>By continuing you agree to keep ShowUp kind. The Guardian handles the rest.</div>
+      <div className="mt-5"><PxButton full disabled={!detailsOk} onClick={startVerify}>Send verification code</PxButton></div>
+      <div className="text-xs mt-3 leading-relaxed" style={{ color: C.faint }}>{emailOk ? "We'll email your code." : phoneOk ? "We'll text your code." : "The code goes to your email — or your phone if that's all you give us."}</div>
     </AuthShell>
   );
 
@@ -963,7 +975,7 @@ function AuthFlow({ core, onDone }) {
       <OtpBoxes code={code} boxesRef={boxes} onType={typeCode} />
       <AuthErr err={err} />
       <div className="mt-6"><PxButton full onClick={() => verifyCode(mode === "su-code" ? "su-password" : "forgot-new")}>Verify</PxButton></div>
-      <button onClick={cooldown ? undefined : () => sendCode(mode)} className="text-xs font-semibold mt-4 text-center w-full" style={{ ...TYPE, color: cooldown ? C.faint : C.teal }}>
+      <button onClick={cooldown ? undefined : () => { if (mode === "su-code") { startVerify(); } else { sendCode(mode); } }} className="text-xs font-semibold mt-4 text-center w-full" style={{ ...TYPE, color: cooldown ? C.faint : C.teal }}>
         {cooldown ? `Resend in ${cooldown}s` : "Resend code"}
       </button>
       <button onClick={() => setErr(core.peekLastCode(identity.trim()))} className="text-xs mt-5 text-center w-full" style={{ ...TYPE, color: C.faint }}>Testing? Peek the outbox →</button>
@@ -986,28 +998,35 @@ function AuthFlow({ core, onDone }) {
         ))}
       </div>
       <AuthErr err={err} />
-      <div className="mt-5"><PxButton full disabled={!pwOk || pw !== pw2} onClick={() => setMode("su-profile")}>Continue</PxButton></div>
+      <div className="mt-5"><PxButton full disabled={!pwOk || pw !== pw2} onClick={() => setMode("su-username")}>Continue</PxButton></div>
     </AuthShell>
   );
 
-  if (mode === "su-profile") return (
+  if (mode === "su-username") return (
     <AuthShell onBack={() => { setErr(""); setMode("su-password"); }} progress={3}>
-      <AuthH t="Make it yours" s="Your name, your handle, your face — the profile your friends will see." />
+      <AuthH t="Claim your @" s="This is how friends find you. Choose well — it's yours." />
       <div className="flex justify-center mt-5">
         <button onClick={() => fileRef.current?.click()} className="relative active:scale-95 transition-transform" aria-label="Add photo">
-          <PxAvatar user={{ name: dname || "?", photo, avatarSeed: (uname.length + dname.length) % 8 }} size={88} />
+          <PxAvatar user={{ name: dname || "?", photo, avatarSeed: (uname.length + dname.length) % 8 }} size={84} />
           <span className="absolute -bottom-1 -right-1 rounded-full flex items-center justify-center" style={{ width: 28, height: 28, background: C.teal, border: `2.5px solid ${C.paper}` }}><Camera size={13} color="#FFF" /></span>
         </button>
-        <input ref={captureRef} type="file" accept="image/*" capture="user" className="hidden" onChange={onFile} />
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
       </div>
-      <div className="mt-5 flex flex-col gap-3">
-        <PxInput value={dname} onChange={(e) => { setDname(e.target.value); setErr(""); }} placeholder="Full name" maxLength={30} />
-        <PxInput value={uname} onChange={(e) => { setUname(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "")); setErr(""); }} placeholder="username" maxLength={15}
-          right={uname.length >= 3 && (unameFree ? <Check size={16} color={C.green} /> : <X size={16} color={C.coral} />)} />
-        {uname.length >= 3 && !unameFree && <div className="text-xs -mt-1" style={{ color: C.faint }}>Taken — how about <b style={{ color: C.ink }}>{uname}_{Math.floor(uname.length * 7 % 90) + 10}</b>?</div>}
+      <div className="text-xs text-center mt-2" style={{ color: C.faint }}>{dname.trim() || "Add a photo (optional)"}</div>
+      <div className="mt-5 relative">
+        <span className="absolute font-bold" style={{ left: 16, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: uname ? C.ink : C.faint, ...TYPE }}>@</span>
+        <input autoFocus value={uname} onChange={(e) => { setUname(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "")); setErr(""); }} placeholder="username" maxLength={15} spellCheck={false} autoCapitalize="none"
+          className="w-full outline-none" style={{ ...TYPE, background: C.card, border: `1.5px solid ${uname.length >= 3 ? (unameFree ? C.green : C.coral) : C.line}`, borderRadius: 14, padding: "13px 40px 13px 32px", fontSize: 16, color: C.ink }} />
+        <span className="absolute" style={{ right: 14, top: "50%", transform: "translateY(-50%)" }}>{uname.length >= 3 && (unameFree ? <Check size={17} color={C.green} /> : <X size={17} color={C.coral} />)}</span>
       </div>
+      {uname.length >= 3 && !unameFree && (
+        <button onClick={() => { setUname(unameHint); setErr(""); }} className="flex items-center gap-1.5 mt-2.5 px-3 py-2 active:scale-95 transition-transform" style={px.chip}>
+          <Sparkles size={12} color={C.teal} /><span className="text-sm font-semibold" style={{ color: C.ink }}>@{unameHint} is free — take it</span>
+        </button>
+      )}
+      {uname.length >= 3 && unameFree && <div className="text-xs mt-2" style={{ color: C.green }}>@{uname} is yours if you want it.</div>}
       <AuthErr err={err} />
-      <div className="mt-5"><PxButton full disabled={!dname.trim() || !unameFree} onClick={finishSignup}>Create my account</PxButton></div>
+      <div className="mt-5"><PxButton full disabled={!unameFree} onClick={finishSignup}>Create my account</PxButton></div>
     </AuthShell>
   );
 
@@ -1081,7 +1100,7 @@ function CameraSheet({ onCapture, onClose }) {
   };
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.night }}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.night }}>
       <div className="flex items-center h-12 px-2 shrink-0">
         <button onClick={onClose} className="p-2"><X size={20} color={C.paper} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.paper }}>Proof of showing up</div>
@@ -1256,17 +1275,41 @@ function MilestoneCard({ post, isYou, onOpenPerson, onHype }) {
   );
 }
 
-function MemoryCard({ post }) {
+function MemoryStory({ post, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 5200); return () => clearTimeout(t); }, []);
+  return (
+    <div className="fixed inset-0 flex flex-col select-none" style={{ zIndex: 59, ...TYPE, background: C.night }} onClick={onClose} {...swipeDown(onClose)}>
+      <div className="absolute inset-0"><PostPhoto post={post} /></div>
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(23,19,14,0.6), rgba(23,19,14,0.05) 30%, rgba(23,19,14,0.05) 65%, rgba(23,19,14,0.7))" }} />
+      <div className="absolute left-4 right-4 rounded-full overflow-hidden" style={{ top: "calc(12px + env(safe-area-inset-top))", height: 3.5, background: "rgba(255,255,255,0.3)", zIndex: 3 }}>
+        <div className="h-full rounded-full" style={{ background: "#FFF", animation: "storyFill 5s linear both" }} />
+      </div>
+      <div className="absolute left-4 flex items-center gap-2" style={{ top: "calc(26px + env(safe-area-inset-top))", zIndex: 3 }}>
+        <Sparkles size={14} color="#FFF" />
+        <span className="text-sm font-bold text-white" style={{ textShadow: "0 1px 3px rgba(23,19,14,0.6)" }}>One year ago</span>
+        <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.8)" }}>· June 2025</span>
+      </div>
+      <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="absolute right-3 p-2.5" style={{ top: "calc(20px + env(safe-area-inset-top))", zIndex: 3 }}><X size={20} color="#FFF" /></button>
+      <div className="absolute inset-x-0 bottom-0 px-6 text-center" style={{ paddingBottom: "calc(44px + env(safe-area-inset-bottom))", zIndex: 3 }}>
+        <div className="text-base font-bold text-white leading-snug" style={{ textShadow: "0 2px 6px rgba(23,19,14,0.7)" }}>{post.text}</div>
+        <div className="text-xs font-semibold mt-1.5" style={{ color: "rgba(255,255,255,0.85)" }}>{post.sub}</div>
+      </div>
+    </div>
+  );
+}
+
+function MemoryCard({ post, onOpen }) {
   return (
     <div className="px-3 pt-3">
-      <div className="flex items-center gap-3 p-3" style={px.flat}>
+      <button onClick={() => onOpen(post)} className="w-full flex items-center gap-3 p-3 text-left active:scale-[0.98] transition-transform" style={px.flat}>
         <div className="relative overflow-hidden shrink-0" style={{ width: 50, height: 62, borderRadius: 10 }}><PostPhoto post={post} /></div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5"><Sparkles size={11} color={C.teal} /><span className="text-xs font-bold uppercase tracking-widest" style={{ color: C.faint }}>One year ago</span></div>
           <div className="text-sm mt-1 leading-snug" style={{ color: C.ink }}>{post.text}</div>
           <div className="text-xs mt-0.5" style={{ color: C.faint }}>{post.sub}</div>
         </div>
-      </div>
+        <ChevronRight size={16} color={C.faint} />
+      </button>
     </div>
   );
 }
@@ -1313,7 +1356,7 @@ function FeedScreen({ st, act }) {
         </div>
       )}
       {st.posts.map((post) => {
-        if (post.type === "memory") return <MemoryCard key={post.id} post={post} />;
+        if (post.type === "memory") return <MemoryCard key={post.id} post={post} onOpen={act.openMemory} />;
         const isYou = post.author === "you";
         const person = isYou ? st.me : st.people[post.author];
         if (!person) return null;
@@ -1345,7 +1388,7 @@ function ComposerSheet({ st, core, onPost, onClose }) {
   if (step === "camera") return <CameraSheet onCapture={(p) => { setPhoto(p); setStep("finish"); }} onClose={() => setStep("pick")} />;
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper }} {...swipeBack(step === "pick" ? onClose : () => setStep("pick"))}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper }} {...swipeBack(step === "pick" ? onClose : () => setStep("pick"))}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={step === "pick" ? onClose : () => setStep("pick")} className="p-2">{step === "pick" ? <X size={20} color={C.ink} /> : <ChevronLeft size={20} color={C.ink} />}</button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>{step === "pick" ? "Show up" : "Almost there"}</div>
@@ -1417,16 +1460,14 @@ function FeaturedScreen({ st, act }) {
   const nominated = st.nominatedId ? st.posts.find((p) => p.id === st.nominatedId) : null;
   return (
     <div className="pb-6">
-      <div className="px-4 pt-4 pb-1">
-        <div className="relative overflow-hidden" style={{ borderRadius: 18, background: "linear-gradient(120deg, #F2B93B, #E8563F 55%, #7C5CD9)", boxShadow: "0 8px 20px -10px rgba(232,86,63,0.5)" }}>
-          <div className="flex items-center gap-3 px-4 py-4">
-            <div style={{ animation: "bob 2.4s ease-in-out infinite", filter: "drop-shadow(0 2px 3px rgba(23,19,14,0.4))" }}><Sprite grid={SPR.trophy} pal={{ y: "#FFF3C4" }} px={2.6} /></div>
-            <div className="flex-1">
-              <div className="text-lg font-bold text-white leading-tight" style={{ textShadow: "0 1px 3px rgba(23,19,14,0.35)" }}>The Wall of the Week</div>
-              <div className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.92)" }}>All of ShowUp. One wall. New crowns Sunday. 👑</div>
-            </div>
-            <PxTag color="rgba(23,19,14,0.35)" ink="#FFF">{FEATURED_WEEK.label}</PxTag>
+      <div className="relative overflow-hidden" style={{ background: "linear-gradient(115deg, #F2B93B, #E8563F 58%, #7C5CD9)" }}>
+        <div className="absolute -right-3 -top-4 opacity-25" style={{ transform: "rotate(14deg)" }}><Sprite grid={SPR.trophy} pal={{ y: "#FFF3C4" }} px={7} /></div>
+        <div className="relative flex items-end justify-between px-4 pt-6 pb-4">
+          <div>
+            <div className="font-bold text-white tracking-tight leading-none" style={{ fontSize: 28, textShadow: "0 2px 5px rgba(23,19,14,0.35)" }}>Featured ✨</div>
+            <div className="text-xs font-semibold mt-1.5" style={{ color: "rgba(255,255,255,0.94)", textShadow: "0 1px 3px rgba(23,19,14,0.3)" }}>All of ShowUp. One wall. New crowns Sunday. 👑</div>
           </div>
+          <span className="shrink-0 text-xs font-bold text-white px-2.5 py-1 rounded-full" style={{ background: "rgba(23,19,14,0.38)" }}>{FEATURED_WEEK.label}</span>
         </div>
       </div>
 
@@ -1497,7 +1538,7 @@ function NominateSheet({ st, initialPost, onPick, onClose }) {
   const mine = st.posts.filter((p) => !p.type && p.author === "you");
   const [picked, setPicked] = useState(initialPost || null);
   return (
-    <div className="absolute inset-0 flex flex-col justify-end" style={{ zIndex: 58, ...TYPE }}>
+    <div className="fixed inset-0 flex flex-col justify-end" style={{ zIndex: 58, ...TYPE }}>
       <div className="absolute inset-0" style={{ background: "rgba(23,19,14,0.5)", animation: "fadeIn 0.2s ease both" }} onClick={onClose} />
       <div className="relative flex flex-col" style={{ background: C.paper, borderRadius: "22px 22px 0 0", maxHeight: "80%", animation: "sheetUp 0.28s ease both" }} {...swipeDown(onClose)}>
         <div className="pt-3 pb-2 text-center shrink-0">
@@ -1541,7 +1582,7 @@ function ShopSheet({ st, act, onClose }) {
   const [tab, setTab] = useState("banners");
   const items = tab === "coins" ? COIN_PACKS : SHOP[tab];
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 46, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
+    <div className="fixed inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 46, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold" style={{ color: C.ink }}>Style shop</div>
@@ -1733,7 +1774,7 @@ function BannerEditor({ st, act, onClose }) {
   const pinnable = [...st.myFeatured, ...groupTrophies(st.badges)];
   const pins = st.me.pins || [];
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 47, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
+    <div className="fixed inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 47, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold" style={{ color: C.ink }}>Edit banner</div>
@@ -1850,7 +1891,7 @@ function FriendSheet({ person, pairs, onClose }) {
   const theirBadges = useMemo(() => groupTrophies(badgesFor(person.progress || { Running: 34, Soccer: 8 })).slice(0, 8), [person]);
   const pair = pairs[person.id] || 0;
   return (
-    <div className="absolute inset-0 z-40 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
+    <div className="fixed inset-0 z-40 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>{person.name}</div>
@@ -1909,7 +1950,7 @@ function MentionText({ text, people, onOpen }) {
 }
 
 /* ── COMMENTS — mentions, quiet Guardian, kind by default ── */
-function CommentsSheet({ postId, st, core, onAdd, onClose, onOpenPerson }) {
+function CommentsSheet({ postId, st, core, onAdd, onClose, onOpenPerson, onLikeComment }) {
   const [text, setText] = useState("");
   const [g, setG] = useState(null);
   const inputRef = useRef(null);
@@ -1947,7 +1988,11 @@ function CommentsSheet({ postId, st, core, onAdd, onClose, onOpenPerson }) {
             return (
               <div key={c.id} className="flex items-start gap-2.5 py-2">
                 <PxAvatar user={p || {}} size={28} />
-                <div className="text-sm leading-snug" style={{ color: C.ink }}><b>{c.author === "you" ? "you" : p?.name.toLowerCase()}</b> <MentionText text={c.text} people={st.people} onOpen={onOpenPerson} /></div>
+                <div className="flex-1 min-w-0 text-sm leading-snug" style={{ color: C.ink }}><b>{c.author === "you" ? "you" : p?.name.toLowerCase()}</b> <MentionText text={c.text} people={st.people} onOpen={onOpenPerson} /></div>
+                <button onClick={() => onLikeComment(postId, c.id)} className="shrink-0 flex flex-col items-center pt-0.5 active:scale-90 transition-transform" style={{ minWidth: 26 }} aria-label="Like comment">
+                  <Heart size={14} color={c.liked ? C.coral : C.faint} fill={c.liked ? C.coral : "none"} />
+                  {(c.likes || 0) > 0 && <span className="font-semibold tabular-nums" style={{ fontSize: 10.5, color: C.faint }}>{c.likes}</span>}
+                </button>
               </div>
             );
           })}
@@ -1991,7 +2036,7 @@ function CommentsSheet({ postId, st, core, onAdd, onClose, onOpenPerson }) {
 /* ── NOTIFICATIONS ── */
 function NotifSheet({ st, act, onClose }) {
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }} {...swipeBack(onClose)}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>Activity</div>
@@ -2037,7 +2082,7 @@ function Spotlight({ badge, count, onClose }) {
   const featured = badge.kind === "featured";
   const days = TIER_DAYS[badge.tier - 1];
   return (
-    <div className="absolute inset-0 flex items-center justify-center px-8" style={{ zIndex: 60, ...TYPE }} onClick={onClose}>
+    <div className="fixed inset-0 flex items-center justify-center px-8" style={{ zIndex: 60, ...TYPE }} onClick={onClose}>
       <div className="absolute inset-0" style={{ background: "rgba(32,24,15,0.6)", animation: "fadeIn 0.2s ease both" }} />
       <div className="relative flex flex-col items-center text-center p-6" style={{ ...px.card, boxShadow: SHADOW(5), animation: "spotIn 0.4s cubic-bezier(0.2,1.3,0.4,1) both", maxWidth: 300 }}>
         <div style={{ filter: locked ? "grayscale(1) opacity(0.55)" : "none", animation: locked ? "none" : "bob 2.4s ease-in-out infinite" }}>
@@ -2058,7 +2103,7 @@ function Spotlight({ badge, count, onClose }) {
 
 function PairCele({ cele, me, onClose }) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center px-8" style={{ zIndex: 60, ...TYPE }} onClick={onClose}>
+    <div className="fixed inset-0 flex items-center justify-center px-8" style={{ zIndex: 60, ...TYPE }} onClick={onClose}>
       <div className="absolute inset-0" style={{ background: "rgba(32,24,15,0.6)", animation: "fadeIn 0.2s ease both" }} />
       <div className="relative flex flex-col items-center text-center p-6" style={{ ...px.card, boxShadow: SHADOW(5), animation: "spotIn 0.4s cubic-bezier(0.2,1.3,0.4,1) both", maxWidth: 300 }}>
         <div className="flex items-center" style={{ animation: "bob 2.6s ease-in-out infinite" }}>
@@ -2170,7 +2215,7 @@ function JourneyScreen({ activity, count, onSpotlight, onClose }) {
     scroller.current.scrollTop = Math.max(0, chFromTop * CH_H - 120);
   }, []);
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ zIndex: 45, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: T.ch[4][0], animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
+    <div className="fixed inset-0 flex flex-col" style={{ zIndex: 45, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: T.ch[4][0], animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ background: "rgba(23,19,14,0.88)" }}>
         <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.paper} /></button>
         <div className="flex-1 text-center">
@@ -2230,7 +2275,7 @@ function JourneyScreen({ activity, count, onSpotlight, onClose }) {
 function ProgressScreen({ st, act, onClose }) {
   const rows = Object.entries(st.progress).sort((a, b) => b[1] - a[1]);
   return (
-    <div className="absolute inset-0 z-40 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
+    <div className="fixed inset-0 z-40 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>Progress</div>
@@ -2343,7 +2388,7 @@ function WrappedSheet({ st, onClose, onShare }) {
   };
   const banner = st.me.banner || "field-day";
   return (
-    <div className="absolute inset-0 flex flex-col select-none" style={{ zIndex: 59, ...TYPE, background: C.night }} onClick={next} {...wrapSwipe}>
+    <div className="fixed inset-0 flex flex-col select-none" style={{ zIndex: 59, ...TYPE, background: C.night }} onClick={next} {...wrapSwipe}>
       <div className="absolute left-4 right-4 flex gap-1.5" style={{ top: "calc(12px + env(safe-area-inset-top))", zIndex: 4 }}>
         {Array.from({ length: slides }).map((_, k) => <span key={k} className="flex-1 rounded-full" style={{ height: 3.5, background: k <= i ? "#FFF" : "rgba(255,255,255,0.3)" }} />)}
       </div>
@@ -2407,7 +2452,7 @@ function PurchaseSheet({ purchase, me, onConfirm, onClose }) {
   const { item, kind } = purchase;
   const r = kind === "coins" ? null : RARITY[item.rarity];
   return (
-    <div className="absolute inset-0 flex flex-col justify-end" style={{ zIndex: 58, ...TYPE }}>
+    <div className="fixed inset-0 flex flex-col justify-end" style={{ zIndex: 58, ...TYPE }}>
       <div className="absolute inset-0" style={{ background: "rgba(23,19,14,0.5)", animation: "fadeIn 0.2s ease both" }} onClick={onClose} />
       <div className="relative px-5 pt-5" style={{ paddingBottom: "calc(32px + env(safe-area-inset-bottom))", background: C.card, borderRadius: "22px 22px 0 0", boxShadow: "0 -8px 30px rgba(23,19,14,0.25)", animation: "sheetUp 0.28s ease both" }} {...swipeDown(onClose)}>
         <div className="mx-auto rounded-full" style={{ width: 40, height: 4.5, background: C.line }} />
@@ -2448,7 +2493,7 @@ function SettingsSheet({ st, core, act, onClose }) {
     </div>
   );
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 55, ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }} {...swipeBack(onClose)}>
+    <div className="fixed inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 55, ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>Settings</div>
@@ -2511,7 +2556,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.7 · relentlessly kind</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.8 · relentlessly kind</div>
       </div>
     </div>
   );
@@ -2543,7 +2588,8 @@ function BottomNav({ tab, setTab, onCompose }) {
     </button>
   );
   return (
-    <div className="shrink-0 flex items-center px-1" style={{ background: C.paper, borderTop: BORDER, paddingBottom: "env(safe-area-inset-bottom)" }}>
+    <div className="fixed inset-x-0 bottom-0 flex justify-center" style={{ zIndex: 30, pointerEvents: "none" }}>
+      <div className="w-full flex items-center px-1" style={{ maxWidth: 520, background: C.paper, borderTop: BORDER, paddingBottom: "env(safe-area-inset-bottom)", pointerEvents: "auto" }}>
       <Item id="feed" icon={Home} />
       <Item id="friends" icon={Users} />
       <div className="flex-1 flex justify-center py-2">
@@ -2553,12 +2599,14 @@ function BottomNav({ tab, setTab, onCompose }) {
       </div>
       <Item id="featured" icon={Star} />
       <Item id="profile" icon={User} />
+      </div>
     </div>
   );
 }
 
-function useViewportLock(rootRef) {
+function useViewportLock(rootRef, onStale) {
   useEffect(() => {
+    let warned = false;
     const fix = () => {
       const vv = window.visualViewport;
       const h = Math.max(window.innerHeight || 0, vv ? vv.height : 0, document.documentElement.clientHeight || 0);
@@ -2568,6 +2616,10 @@ function useViewportLock(rootRef) {
     };
     fix();
     const timers = [80, 300, 800, 2000].map((ms) => setTimeout(fix, ms));
+    timers.push(setTimeout(() => {
+      const vv = window.visualViewport ? window.visualViewport.height : 0;
+      if (!warned && vv && window.innerHeight && vv - window.innerHeight > 60) { warned = true; onStale && onStale(); }
+    }, 1500));
     window.addEventListener("resize", fix);
     window.addEventListener("pageshow", fix);
     document.addEventListener("visibilitychange", fix);
@@ -2578,7 +2630,7 @@ function useViewportLock(rootRef) {
 
 export default function App() {
   const rootRef = useRef(null);
-  useViewportLock(rootRef);
+  useViewportLock(rootRef, () => showToast("iOS cached an old screen size — remove the icon and re-add it once."));
   /* ── the core: one instance, survives rerenders ── */
   const coreRef = useRef(null);
   if (!coreRef.current) {
@@ -2592,11 +2644,12 @@ export default function App() {
       otp: makeOtpService((m) => db.outbox.push(m), log),
       limit: makeLimiter(),
       guardian: makeGuardian(() => db.blockHashes, log),
-      registerCredentials(identity, pw, username) {
+      registerCredentials(identities, pw, username) {
         const salt = rngToken();
-        db.credentials[identity] = { salt, hash: saltedHash(pw, salt), username };
+        const rec = { salt, hash: saltedHash(pw, salt), username };
+        (Array.isArray(identities) ? identities : [identities]).forEach((id) => { db.credentials[id] = rec; });
         db.usernames.add(username);
-        log("CREDENTIALS_SET", `@${username} · pw salted-hashed`);
+        log("CREDENTIALS_SET", `@${username} · pw salted-hashed · ${Array.isArray(identities) ? identities.length : 1} login identity(ies)`);
       },
       login(identity, pw) {
         const rec = db.credentials[identity];
@@ -2643,6 +2696,7 @@ export default function App() {
   const [myFeatured, setMyFeatured] = useState([]);
   const [history, setHistory] = useState({ 6: {}, 7: {} });
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [memoryView, setMemoryView] = useState(null);
   const [requests, setRequests] = useState(SEED_REQUESTS);
   const [sent, setSent] = useState([]);
   const [notifs, setNotifs] = useState([]);
@@ -2734,6 +2788,7 @@ export default function App() {
     openJourney: (a) => setJourneyFor(a),
     openSettings: () => setSettingsOpen(true),
     openHistory: () => setHistoryOpen(true),
+    openMemory: (post) => { setMemoryView(post); core.log("MEMORY_VIEW", post.id); },
     openShop: () => setShopOpen(true),
     openBannerEdit: () => setBannerEditOpen(true),
     openWrapped: () => setWrappedOpen(true),
@@ -2779,7 +2834,8 @@ export default function App() {
     })),
     react: (id, e) => { setPosts((ps) => ps.map((p) => (p.id === id ? { ...p, reactions: { ...p.reactions, [e]: (p.reactions[e] || 0) + 1 } } : p))); core.log("REACT", e); },
     hype: (post) => core.log("HYPE", `you → ${post.author}`),
-    addComment: (postId, text) => { setComments((c) => ({ ...c, [postId]: [...(c[postId] || []), { id: Date.now(), author: "you", text }] })); core.log("COMMENT", `on ${postId}`); },
+    addComment: (postId, text) => { setComments((c) => ({ ...c, [postId]: [...(c[postId] || []), { id: Date.now(), author: "you", text, likes: 0, liked: false }] })); core.log("COMMENT", `on ${postId}`); },
+    likeComment: (postId, cid) => setComments((cs) => ({ ...cs, [postId]: (cs[postId] || []).map((c) => (c.id === cid ? { ...c, liked: !c.liked, likes: Math.max(0, (c.likes || 0) + (c.liked ? -1 : 1)) } : c)) })),
     accept: (r) => {
       setFriends((f) => [...f, { ...r, days: 0, cheers: 0, since: "today" }]);
       setRequests((q) => q.filter((x) => x.id !== r.id));
@@ -2868,6 +2924,7 @@ export default function App() {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spotIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes slideL { from { transform: translateX(26px); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes storyFill { from { width: 0%; } to { width: 100%; } }
         @keyframes slideR { from { transform: translateX(-26px); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }
         @keyframes cardIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @supports (height: 100dvh) { .app-root { height: 100dvh !important; } }
@@ -2879,7 +2936,7 @@ export default function App() {
           <AuthFlow core={core} onDone={onAuth} />
         ) : (
           <>
-            <div key={tab} className="flex-1 overflow-y-auto no-scrollbar" style={{ animation: slideDir ? `slide${slideDir} 0.22s ease both` : undefined }} {...tabSwipe}>
+            <div key={tab} className="flex-1 overflow-y-auto no-scrollbar" style={{ paddingBottom: "calc(78px + env(safe-area-inset-bottom))", animation: slideDir ? `slide${slideDir} 0.22s ease both` : undefined }} {...tabSwipe}>
               {tab === "feed" && <FeedScreen st={st} act={act} />}
               {tab === "friends" && <FriendsScreen st={st} act={act} />}
               {tab === "featured" && <FeaturedScreen st={st} act={act} />}
@@ -2889,6 +2946,7 @@ export default function App() {
 
             {friendView && <FriendSheet person={friendView} pairs={pairs} onClose={() => setFriendView(null)} />}
             {historyOpen && <HistorySheet st={st} onClose={() => setHistoryOpen(false)} />}
+            {memoryView && <MemoryStory post={memoryView} onClose={() => setMemoryView(null)} />}
             {shopOpen && <ShopSheet st={st} act={act} onClose={() => setShopOpen(false)} />}
             {bannerEditOpen && <BannerEditor st={st} act={act} onClose={() => setBannerEditOpen(false)} />}
             {wrappedOpen && <WrappedSheet st={st} onClose={() => setWrappedOpen(false)} onShare={() => { core.log("WRAP_SHARED", "June share card"); setWrappedOpen(false); showToast("Share card saved — post it anywhere. ✨"); }} />}
@@ -2897,7 +2955,7 @@ export default function App() {
             {journeyFor && <JourneyScreen activity={journeyFor} count={progress[journeyFor] || 0} onSpotlight={(b) => setSpot(b)} onClose={() => setJourneyFor(null)} />}
             {notifOpen && <NotifSheet st={st} act={{ ...act, accept: (r) => { act.accept(r); }, spotlight: (b) => { setSpot({ ...b, locked: false }); } }} onClose={() => setNotifOpen(false)} />}
             {composerOpen && <ComposerSheet st={st} core={core} onPost={act.post} onClose={() => setComposerOpen(false)} />}
-            {commentsFor && <CommentsSheet postId={commentsFor} st={st} core={core} onAdd={act.addComment} onClose={() => setCommentsFor(null)} onOpenPerson={(id) => { setCommentsFor(null); act.openPerson(id); }} />}
+            {commentsFor && <CommentsSheet postId={commentsFor} st={st} core={core} onAdd={act.addComment} onLikeComment={act.likeComment} onClose={() => setCommentsFor(null)} onOpenPerson={(id) => { setCommentsFor(null); act.openPerson(id); }} />}
             {settingsOpen && <SettingsSheet st={st} core={core} act={act} onClose={() => setSettingsOpen(false)} />}
             {purchase && <PurchaseSheet purchase={purchase} me={me} onConfirm={act.confirmPurchase} onClose={() => setPurchase(null)} />}
             {spot && <Spotlight badge={spot} count={progress[spot.activity] || 0} onClose={() => setSpot(null)} />}
