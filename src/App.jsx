@@ -28,7 +28,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import {
   Home, Users, Plus, User, Bell, X, Camera, ChevronLeft, ChevronRight,
   Check, Heart, MessageCircle, Send, Share2, Settings, Sparkles, Zap,
-  ShoppingBag, Shield, ShieldCheck, Eye, EyeOff, RefreshCw,
+  ShoppingBag, Shield, ShieldCheck, Eye, EyeOff, RefreshCw, AtSign,
   SwitchCamera, Upload, Search, Lock, Flame, Trophy, TrendingUp,
   MoreHorizontal, ScrollText, LogOut, Terminal, Mail, Smartphone,
   UserPlus, Star, Gift, Wand2, CircleDot,
@@ -709,7 +709,7 @@ const SEED_POSTS = [
 ];
 const SEED_COMMENTS = {
   p1: [{ id: 1, author: "sofia", text: "barely still counts 💪" }, { id: 2, author: "dev", text: "up we go" }],
-  p2: [{ id: 3, author: "maya", text: "five-a-side fridays >>>" }, { id: 4, author: "jake", text: "ball knowledge" }, { id: 5, author: "dev", text: "W" }],
+  p2: [{ id: 3, author: "maya", text: "@lena five-a-side fridays >>>" }, { id: 4, author: "jake", text: "ball knowledge" }, { id: 5, author: "dev", text: "W" }],
   p3: [{ id: 6, author: "maya", text: "pool > legs, correct" }],
   p4: [{ id: 7, author: "maya", text: "zen king" }],
   p5: [{ id: 8, author: "sofia", text: "5am?? respect" }, { id: 9, author: "lena", text: "the consistency!!" }],
@@ -731,9 +731,9 @@ const FEATURED_WEEK = {
   categories: [
     { id: "artsy", emoji: "🎨", title: "Most Artsy", postId: "p3", blurb: "Light on water, zero edits." },
     { id: "beauty", emoji: "🌄", title: "Most Beautiful", postId: "p5", blurb: "Greenbelt gold before 6 a.m." },
-    { id: "golden", emoji: "🌅", title: "Golden Hour", postId: "p6", blurb: "The foothills showed off." },
+    { id: "golden", emoji: "🌅", title: "Golden Hour", post: { author: { name: "Marcus V.", avatarSeed: 6, shirt: "#C8901A" }, community: true, photo: "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?auto=format&fit=crop&w=800&h=1000&q=70", scene: 3, caption: "chased it, caught it", likes: 214 }, blurb: "All the way from Lisbon." },
     { id: "vibe", emoji: "😌", title: "Best Vibe", postId: "p4", blurb: "Two thoughts. Still counts." },
-    { id: "grit", emoji: "🥵", title: "The Grit Award", postId: "p1", blurb: "Leg-day survivor, barely." },
+    { id: "grit", emoji: "🥵", title: "The Grit Award", post: { author: { name: "Priya", avatarSeed: 4, shirt: "#3E7BC4" }, community: true, photo: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&h=1000&q=70", scene: 4, caption: "the bar doesn't care how you feel", likes: 391 }, blurb: "Community pick — no notes." },
     { id: "squad", emoji: "🫶", title: "Squad Energy", postId: "p2", blurb: "Five-a-side, one heartbeat." },
   ],
 };
@@ -932,7 +932,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.6 · your days + quiet Guardian</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.7 · public wall + mentions</div>
       </div>
     </AuthShell>
   );
@@ -1213,7 +1213,7 @@ function PostCard({ post, person, isYou, people, comments, onLike, onReact, onCo
           </div>
         )}
         {post.caption && <div className="px-3 pt-1 text-sm" style={{ color: C.ink }}><b>{isYou ? "you" : person.name.toLowerCase()}</b> {post.caption}</div>}
-        {top && people[top.author] && <div className="px-3 pt-0.5 text-sm" style={{ color: C.ink }}><b>{people[top.author].name.toLowerCase()}</b> <span style={{ color: C.mute }}>{top.text}</span></div>}
+        {top && people[top.author] && <div className="px-3 pt-0.5 text-sm" style={{ color: C.ink }}><b>{people[top.author].name.toLowerCase()}</b> <span style={{ color: C.mute }}><MentionText text={top.text} people={people} onOpen={onOpenPerson} /></span></div>}
         {count > 1 && <button onClick={() => onComment(post.id)} className="px-3 pt-1 text-sm text-left" style={{ color: C.faint }}>View all {count} comments</button>}
         <div className="pb-2.5" />
       </div>
@@ -1423,7 +1423,7 @@ function FeaturedScreen({ st, act }) {
             <div style={{ animation: "bob 2.4s ease-in-out infinite", filter: "drop-shadow(0 2px 3px rgba(23,19,14,0.4))" }}><Sprite grid={SPR.trophy} pal={{ y: "#FFF3C4" }} px={2.6} /></div>
             <div className="flex-1">
               <div className="text-lg font-bold text-white leading-tight" style={{ textShadow: "0 1px 3px rgba(23,19,14,0.35)" }}>The Wall of the Week</div>
-              <div className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.92)" }}>Six friends made it. Could've been you. 👀</div>
+              <div className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.92)" }}>All of ShowUp. One wall. New crowns Sunday. 👑</div>
             </div>
             <PxTag color="rgba(23,19,14,0.35)" ink="#FFF">{FEATURED_WEEK.label}</PxTag>
           </div>
@@ -1456,9 +1456,11 @@ function FeaturedScreen({ st, act }) {
 
       {/* this week's winners */}
       {FEATURED_WEEK.categories.map((cat) => {
-        const post = st.posts.find((p) => p.id === cat.postId);
+        const post = cat.post || st.posts.find((p) => p.id === cat.postId);
         if (!post) return null;
-        const person = st.people[post.author];
+        const isCommunity = !!post.community;
+        const person = isCommunity ? post.author : st.people[post.author];
+        const open = isCommunity ? undefined : () => act.openPerson(post.author);
         return (
           <div key={cat.id} className="px-4 pt-4">
             <div className="relative overflow-hidden" style={px.card}>
@@ -1466,17 +1468,17 @@ function FeaturedScreen({ st, act }) {
                 <span className="text-sm font-bold" style={{ color: C.ink }}>{cat.emoji} {cat.title}</span>
                 <PixelBadge featuredCat={cat.title} tier={5} size={38} />
               </div>
-              <button onClick={() => act.openPerson(post.author)} className="relative block w-full overflow-hidden active:opacity-90 transition-opacity" style={{ aspectRatio: "4 / 3" }}>
+              <button onClick={open} className="relative block w-full overflow-hidden active:opacity-90 transition-opacity" style={{ aspectRatio: "4 / 3" }}>
                 <PostPhoto post={post} />
                 <div className="absolute inset-x-0 bottom-0 px-3 py-2" style={{ background: "linear-gradient(transparent, rgba(23,19,14,0.65))" }}>
                   <div className="text-xs font-semibold text-white">"{post.caption}"</div>
                 </div>
               </button>
               <div className="flex items-center gap-2.5 px-3.5 py-2.5">
-                <button onClick={() => act.openPerson(post.author)} className="flex items-center gap-2 flex-1 min-w-0 text-left active:scale-95 transition-transform">
+                <button onClick={open} className="flex items-center gap-2 flex-1 min-w-0 text-left active:scale-95 transition-transform">
                   <PxAvatar user={person} size={28} />
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold truncate" style={{ color: C.ink }}>{person?.name}</div>
+                    <div className="flex items-center gap-1.5"><span className="text-sm font-semibold truncate" style={{ color: C.ink }}>{person?.name}</span>{isCommunity && <PxTag color="#E2EDF8" ink="#3E7BC4">Community</PxTag>}</div>
                     <div className="text-xs" style={{ color: C.faint }}>{cat.blurb}</div>
                   </div>
                 </button>
@@ -1885,11 +1887,43 @@ function FriendSheet({ person, pairs, onClose }) {
   );
 }
 
-/* ── COMMENTS — where the Guardian earns its keep ── */
-function CommentsSheet({ postId, st, core, onAdd, onClose }) {
+/* mention rendering: @names glow and open profiles */
+function MentionText({ text, people, onOpen }) {
+  const parts = String(text).split(/(@[a-z0-9_]+)/gi);
+  return (
+    <>
+      {parts.map((p, i) => {
+        if (/^@[a-z0-9_]+$/i.test(p)) {
+          const id = p.slice(1).toLowerCase();
+          const known = people && people[id];
+          return (
+            <b key={i} style={{ color: C.teal }} onClick={known && onOpen ? (e) => { e.stopPropagation(); onOpen(id); } : undefined}>
+              {p}
+            </b>
+          );
+        }
+        return <span key={i}>{p}</span>;
+      })}
+    </>
+  );
+}
+
+/* ── COMMENTS — mentions, quiet Guardian, kind by default ── */
+function CommentsSheet({ postId, st, core, onAdd, onClose, onOpenPerson }) {
   const [text, setText] = useState("");
   const [g, setG] = useState(null);
+  const inputRef = useRef(null);
   const list = st.comments[postId] || [];
+  const mq = text.match(/@([a-z0-9_]*)$/i);
+  const suggestions = mq ? st.friends.filter((f) => f.name.toLowerCase().startsWith(mq[1].toLowerCase())).slice(0, 4) : [];
+  const insertMention = (f) => {
+    setText((t) => t.replace(/@[a-z0-9_]*$/i, `@${f.name.toLowerCase()} `));
+    inputRef.current?.focus();
+  };
+  const tapAt = () => {
+    setText((t) => (t.length === 0 || t.endsWith(" ") ? t + "@" : t + " @"));
+    inputRef.current?.focus();
+  };
   const send = (t) => {
     const verdict = core.guardian.check(t, "comment");
     if (verdict.verdict === "block" || verdict.verdict === "locked") { setG(verdict); return; }
@@ -1913,7 +1947,7 @@ function CommentsSheet({ postId, st, core, onAdd, onClose }) {
             return (
               <div key={c.id} className="flex items-start gap-2.5 py-2">
                 <PxAvatar user={p || {}} size={28} />
-                <div className="text-sm leading-snug" style={{ color: C.ink }}><b>{c.author === "you" ? "you" : p?.name.toLowerCase()}</b> {c.text}</div>
+                <div className="text-sm leading-snug" style={{ color: C.ink }}><b>{c.author === "you" ? "you" : p?.name.toLowerCase()}</b> <MentionText text={c.text} people={st.people} onOpen={onOpenPerson} /></div>
               </div>
             );
           })}
@@ -1928,8 +1962,23 @@ function CommentsSheet({ postId, st, core, onAdd, onClose }) {
 
             </div>
           )}
-          <div className="flex gap-2">
-            <PxInput value={text} onChange={(e) => { setText(e.target.value); setG(null); }} placeholder="Say something kind…" maxLength={120} onKeyDown={(e) => e.key === "Enter" && text.trim() && send(text.trim())} />
+          {suggestions.length > 0 && (
+            <div className="hscroll flex gap-2 overflow-x-auto no-scrollbar pb-2">
+              {suggestions.map((f) => (
+                <button key={f.id} onClick={() => insertMention(f)} className="flex items-center gap-1.5 pl-1 pr-2.5 py-1 shrink-0 active:scale-95 transition-transform" style={px.chip}>
+                  <PxAvatar user={f} size={22} />
+                  <span className="text-sm font-semibold" style={{ color: C.ink }}>@{f.name.toLowerCase()}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <button onClick={tapAt} className="shrink-0 flex items-center justify-center active:scale-90 transition-transform" style={{ width: 40, height: 44, borderRadius: 12, background: C.field }} aria-label="Mention a friend"><AtSign size={17} color={C.ink} /></button>
+            <div className="flex-1 relative">
+              <input ref={inputRef} value={text} onChange={(e) => { setText(e.target.value); setG(null); }} placeholder="Say something kind…" maxLength={120}
+                onKeyDown={(e) => e.key === "Enter" && text.trim() && send(text.trim())} spellCheck={false}
+                className="w-full outline-none" style={{ ...TYPE, background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 14, padding: "11px 14px", fontSize: 16, color: C.ink }} />
+            </div>
             <PxButton small onClick={() => text.trim() && send(text.trim())} ariaLabel="Send"><Send size={14} /></PxButton>
           </div>
 
@@ -2462,7 +2511,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.6 · relentlessly kind</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.7 · relentlessly kind</div>
       </div>
     </div>
   );
@@ -2848,7 +2897,7 @@ export default function App() {
             {journeyFor && <JourneyScreen activity={journeyFor} count={progress[journeyFor] || 0} onSpotlight={(b) => setSpot(b)} onClose={() => setJourneyFor(null)} />}
             {notifOpen && <NotifSheet st={st} act={{ ...act, accept: (r) => { act.accept(r); }, spotlight: (b) => { setSpot({ ...b, locked: false }); } }} onClose={() => setNotifOpen(false)} />}
             {composerOpen && <ComposerSheet st={st} core={core} onPost={act.post} onClose={() => setComposerOpen(false)} />}
-            {commentsFor && <CommentsSheet postId={commentsFor} st={st} core={core} onAdd={act.addComment} onClose={() => setCommentsFor(null)} />}
+            {commentsFor && <CommentsSheet postId={commentsFor} st={st} core={core} onAdd={act.addComment} onClose={() => setCommentsFor(null)} onOpenPerson={(id) => { setCommentsFor(null); act.openPerson(id); }} />}
             {settingsOpen && <SettingsSheet st={st} core={core} act={act} onClose={() => setSettingsOpen(false)} />}
             {purchase && <PurchaseSheet purchase={purchase} me={me} onConfirm={act.confirmPurchase} onClose={() => setPurchase(null)} />}
             {spot && <Spotlight badge={spot} count={progress[spot.activity] || 0} onClose={() => setSpot(null)} />}
