@@ -855,6 +855,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.1 · pushed live from Claude</div>
       </div>
     </AuthShell>
   );
@@ -2401,7 +2402,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build · pixel-warm · relentlessly kind</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.1 · pushed live from Claude · relentlessly kind</div>
       </div>
     </div>
   );
