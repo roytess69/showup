@@ -948,7 +948,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.8 · mobile-true</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.9 · straight talk</div>
       </div>
     </AuthShell>
   );
@@ -1004,7 +1004,7 @@ function AuthFlow({ core, onDone }) {
 
   if (mode === "su-username") return (
     <AuthShell onBack={() => { setErr(""); setMode("su-password"); }} progress={3}>
-      <AuthH t="Claim your @" s="This is how friends find you. Choose well — it's yours." />
+      <AuthH t="Claim your @" s="This is how friends find you." />
       <div className="flex justify-center mt-5">
         <button onClick={() => fileRef.current?.click()} className="relative active:scale-95 transition-transform" aria-label="Add photo">
           <PxAvatar user={{ name: dname || "?", photo, avatarSeed: (uname.length + dname.length) % 8 }} size={84} />
@@ -1024,7 +1024,7 @@ function AuthFlow({ core, onDone }) {
           <Sparkles size={12} color={C.teal} /><span className="text-sm font-semibold" style={{ color: C.ink }}>@{unameHint} is free — take it</span>
         </button>
       )}
-      {uname.length >= 3 && unameFree && <div className="text-xs mt-2" style={{ color: C.green }}>@{uname} is yours if you want it.</div>}
+      {uname.length >= 3 && unameFree && <div className="text-xs mt-2" style={{ color: C.green }}>@{uname} is available.</div>}
       <AuthErr err={err} />
       <div className="mt-5"><PxButton full disabled={!unameFree} onClick={finishSignup}>Create my account</PxButton></div>
     </AuthShell>
@@ -1181,7 +1181,7 @@ function PostCard({ post, person, isYou, people, comments, onLike, onReact, onCo
                 ) : (
                   <>
                     <button onClick={() => { setMenuOpen(false); onMenu("share", post); }} className="px-3.5 py-2.5 text-sm font-semibold text-left" style={{ color: C.ink, borderBottom: `1px solid ${C.line}` }}>Share post</button>
-                    <button onClick={() => { setMenuOpen(false); onMenu("report", post); }} className="px-3.5 py-2.5 text-sm font-semibold text-left" style={{ color: C.coral }}>Report to Guardian</button>
+                    <button onClick={() => { setMenuOpen(false); onMenu("report", post); }} className="px-3.5 py-2.5 text-sm font-semibold text-left" style={{ color: C.coral }}>Report</button>
                   </>
                 )}
               </div>
@@ -1363,7 +1363,7 @@ function FeedScreen({ st, act }) {
         if (post.type === "milestone") return <MilestoneCard key={post.id} post={post} isYou={isYou} onOpenPerson={act.openPerson} onHype={act.hype} />;
         return <PostCard key={post.id} post={post} person={person} isYou={isYou} people={st.people} comments={st.comments} onLike={act.like} onReact={act.react} onComment={act.openComments} onOpenPerson={act.openPerson} onMenu={act.postMenu} />;
       })}
-      <div className="text-center text-xs py-6" style={{ color: C.faint }}>You're all caught up — kind place, this.</div>
+      <div className="text-center text-xs py-6" style={{ color: C.faint }}>You're all caught up</div>
     </div>
   );
 }
@@ -1437,7 +1437,7 @@ function ComposerSheet({ st, core, onPost, onClose }) {
             })}
           </div>
           <div className="pt-3">
-            <PxInput value={caption} onChange={(e) => { setCaption(e.target.value); setGErr(null); }} placeholder="Add a caption (optional, kind)" maxLength={80} />
+            <PxInput value={caption} onChange={(e) => { setCaption(e.target.value); setGErr(null); }} placeholder="Add a caption…" maxLength={80} />
             {gErr && <div className="mt-2 p-2.5 text-xs font-bold" style={{ ...px.flat, borderColor: C.coral, color: C.coral }}>{gErr}</div>}
           </div>
           <div className="flex-1" />
@@ -1464,8 +1464,8 @@ function FeaturedScreen({ st, act }) {
         <div className="absolute -right-3 -top-4 opacity-25" style={{ transform: "rotate(14deg)" }}><Sprite grid={SPR.trophy} pal={{ y: "#FFF3C4" }} px={7} /></div>
         <div className="relative flex items-end justify-between px-4 pt-6 pb-4">
           <div>
-            <div className="font-bold text-white tracking-tight leading-none" style={{ fontSize: 28, textShadow: "0 2px 5px rgba(23,19,14,0.35)" }}>Featured ✨</div>
-            <div className="text-xs font-semibold mt-1.5" style={{ color: "rgba(255,255,255,0.94)", textShadow: "0 1px 3px rgba(23,19,14,0.3)" }}>All of ShowUp. One wall. New crowns Sunday. 👑</div>
+            <div className="font-bold text-white tracking-tight leading-none" style={{ fontSize: 28, textShadow: "0 2px 5px rgba(23,19,14,0.35)" }}>Featured</div>
+            <div className="text-xs font-semibold mt-1.5" style={{ color: "rgba(255,255,255,0.94)", textShadow: "0 1px 3px rgba(23,19,14,0.3)" }}>The best of the week, from everyone. New winners Sunday.</div>
           </div>
           <span className="shrink-0 text-xs font-bold text-white px-2.5 py-1 rounded-full" style={{ background: "rgba(23,19,14,0.38)" }}>{FEATURED_WEEK.label}</span>
         </div>
@@ -1982,7 +1982,7 @@ function CommentsSheet({ postId, st, core, onAdd, onClose, onOpenPerson, onLikeC
           <button onClick={onClose} className="p-2"><X size={18} color={C.ink} /></button>
         </div>
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3">
-          {list.length === 0 && <div className="text-xs text-center py-6" style={{ color: C.faint }}>Be the first — keep it kind.</div>}
+          {list.length === 0 && <div className="text-xs text-center py-6" style={{ color: C.faint }}>No comments yet.</div>}
           {list.map((c) => {
             const p = c.author === "you" ? st.me : st.people[c.author];
             return (
@@ -2020,7 +2020,7 @@ function CommentsSheet({ postId, st, core, onAdd, onClose, onOpenPerson, onLikeC
           <div className="flex items-center gap-2">
             <button onClick={tapAt} className="shrink-0 flex items-center justify-center active:scale-90 transition-transform" style={{ width: 40, height: 44, borderRadius: 12, background: C.field }} aria-label="Mention a friend"><AtSign size={17} color={C.ink} /></button>
             <div className="flex-1 relative">
-              <input ref={inputRef} value={text} onChange={(e) => { setText(e.target.value); setG(null); }} placeholder="Say something kind…" maxLength={120}
+              <input ref={inputRef} value={text} onChange={(e) => { setText(e.target.value); setG(null); }} placeholder="Add a comment…" maxLength={120}
                 onKeyDown={(e) => e.key === "Enter" && text.trim() && send(text.trim())} spellCheck={false}
                 className="w-full outline-none" style={{ ...TYPE, background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 14, padding: "11px 14px", fontSize: 16, color: C.ink }} />
             </div>
@@ -2404,7 +2404,7 @@ function WrappedSheet({ st, onClose, onShare }) {
             )}
             <PxAvatar user={st.me} size={76} />
             <div className="text-2xl font-bold text-white mt-3 tracking-tight" style={{ textShadow: "0 2px 6px rgba(23,19,14,0.6)" }}>{st.me.name}'s June</div>
-            <div className="text-sm font-semibold mt-1" style={{ color: "rgba(255,255,255,0.92)", textShadow: "0 1px 4px rgba(23,19,14,0.6)" }}>Wrapped — on your own banner</div>
+            <div className="text-sm font-semibold mt-1" style={{ color: "rgba(255,255,255,0.92)", textShadow: "0 1px 4px rgba(23,19,14,0.6)" }}>June, wrapped</div>
             <div className="text-xs mt-6" style={{ color: "rgba(255,255,255,0.7)" }}>Tap to continue</div>
           </div>
         </div>
@@ -2415,7 +2415,7 @@ function WrappedSheet({ st, onClose, onShare }) {
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-10">
             <div className="font-bold text-white tabular-nums" style={{ fontSize: 92, lineHeight: 1, textShadow: "0 4px 14px rgba(23,19,14,0.6)" }}>{days}</div>
             <div className="text-lg font-bold text-white mt-2" style={{ textShadow: "0 2px 6px rgba(23,19,14,0.6)" }}>days you showed up</div>
-            <div className="text-sm mt-1.5 font-semibold px-3 py-1 rounded-full" style={{ color: "#FFF", background: "rgba(23,19,14,0.5)" }}>out of {ofDays} — that's most of them</div>
+            <div className="text-sm mt-1.5 font-semibold px-3 py-1 rounded-full" style={{ color: "#FFF", background: "rgba(23,19,14,0.5)" }}>of {ofDays} days</div>
           </div>
         </div>
       )}
@@ -2425,7 +2425,7 @@ function WrappedSheet({ st, onClose, onShare }) {
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-10">
             {top && <div style={{ animation: "bob 2.6s ease-in-out infinite", filter: "drop-shadow(0 4px 8px rgba(23,19,14,0.55))" }}><PixelBadge activity={top[0]} tier={Math.max(1, TIER_DAYS.findIndex((t) => t > top[1]) === -1 ? 6 : TIER_DAYS.findIndex((t) => t > top[1]))} size={88} /></div>}
             <div className="text-lg font-bold text-white mt-4" style={{ textShadow: "0 2px 6px rgba(23,19,14,0.6)" }}>{top ? top[0] : "Showing up"} carried the month</div>
-            <div className="text-sm mt-1.5 font-semibold px-3 py-1 rounded-full" style={{ color: "#FFF", background: "rgba(23,19,14,0.5)" }}>{top ? `${top[1]} days, all-time — your most-shown-up thing` : "July is wide open"}</div>
+            <div className="text-sm mt-1.5 font-semibold px-3 py-1 rounded-full" style={{ color: "#FFF", background: "rgba(23,19,14,0.5)" }}>{top ? `${top[1]} days all-time` : "July is wide open"}</div>
           </div>
         </div>
       )}
@@ -2556,7 +2556,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.8 · relentlessly kind</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp v2.9</div>
       </div>
     </div>
   );
@@ -2588,7 +2588,7 @@ function BottomNav({ tab, setTab, onCompose }) {
     </button>
   );
   return (
-    <div className="fixed inset-x-0 bottom-0 flex justify-center" style={{ zIndex: 30, pointerEvents: "none" }}>
+    <div className="fixed inset-x-0 flex justify-center" style={{ bottom: "calc(-1 * var(--vv-gap, 0px))", zIndex: 30, pointerEvents: "none" }}>
       <div className="w-full flex items-center px-1" style={{ maxWidth: 520, background: C.paper, borderTop: BORDER, paddingBottom: "env(safe-area-inset-bottom)", pointerEvents: "auto" }}>
       <Item id="feed" icon={Home} />
       <Item id="friends" icon={Users} />
@@ -2609,9 +2609,13 @@ function useViewportLock(rootRef, onStale) {
     let warned = false;
     const fix = () => {
       const vv = window.visualViewport;
-      const h = Math.max(window.innerHeight || 0, vv ? vv.height : 0, document.documentElement.clientHeight || 0);
+      const vvH = vv ? vv.height : 0;
+      const h = Math.max(window.innerHeight || 0, vvH, document.documentElement.clientHeight || 0);
       if (!h) return;
       document.documentElement.style.setProperty("--app-height", h + "px");
+      // stale layout viewport: fixed elements anchor short — push chrome down by the gap
+      const gap = Math.max(0, Math.round(vvH - (window.innerHeight || vvH)));
+      document.documentElement.style.setProperty("--vv-gap", gap + "px");
       if (rootRef.current) rootRef.current.style.setProperty("height", h + "px", "important");
     };
     fix();
@@ -2807,10 +2811,10 @@ export default function App() {
         const person = people[post.author];
         if (navigator.share) {
           navigator.share({ title: "ShowUp", text: `${person?.name || "A friend"} showed up — ${post.activity}${post.caption ? ` · "${post.caption}"` : ""}`, url: window.location.href }).catch(() => {});
-        } else { showToast("Copied the vibe — sharing works on your phone."); }
+        } else { showToast("Sharing works on your phone."); }
         core.log("SHARE", post.id);
       }
-      if (kind === "report") { core.log("GUARDIAN_REPORT", post.id); showToast("Thanks — the Guardian will take a look."); }
+      if (kind === "report") { core.log("GUARDIAN_REPORT", post.id); showToast("Report received."); }
       if (kind === "nominate") {
         if (nominatedId) { showToast("This week's entry is used — resets Monday."); return; }
         setNominateSeed(post); setNominateOpen(true);
@@ -2949,7 +2953,7 @@ export default function App() {
             {memoryView && <MemoryStory post={memoryView} onClose={() => setMemoryView(null)} />}
             {shopOpen && <ShopSheet st={st} act={act} onClose={() => setShopOpen(false)} />}
             {bannerEditOpen && <BannerEditor st={st} act={act} onClose={() => setBannerEditOpen(false)} />}
-            {wrappedOpen && <WrappedSheet st={st} onClose={() => setWrappedOpen(false)} onShare={() => { core.log("WRAP_SHARED", "June share card"); setWrappedOpen(false); showToast("Share card saved — post it anywhere. ✨"); }} />}
+            {wrappedOpen && <WrappedSheet st={st} onClose={() => setWrappedOpen(false)} onShare={() => { core.log("WRAP_SHARED", "June share card"); setWrappedOpen(false); showToast("Share card saved."); }} />}
             {nominateOpen && <NominateSheet st={st} initialPost={nominateSeed} onPick={act.nominate} onClose={() => { setNominateOpen(false); setNominateSeed(null); }} />}
             {progressOpen && <ProgressScreen st={st} act={{ ...act, openJourney: (a) => setJourneyFor(a) }} onClose={() => setProgressOpen(false)} />}
             {journeyFor && <JourneyScreen activity={journeyFor} count={progress[journeyFor] || 0} onSpotlight={(b) => setSpot(b)} onClose={() => setJourneyFor(null)} />}
