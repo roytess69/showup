@@ -147,7 +147,7 @@ function PxButton({ children, onClick, kind = "primary", disabled, full, small, 
       onClick={disabled ? undefined : onClick}
       aria-label={ariaLabel}
       className={`${full ? "w-full" : ""} font-semibold active:scale-95 transition-transform select-none`}
-      style={{ ...TYPE, background: bg, color, borderRadius: 999, padding: small ? "8px 14px" : "13px 18px", fontSize: small ? 12.5 : 14.5, letterSpacing: -0.1, boxShadow: disabled || kind === "ghost" ? "none" : "0 6px 16px -8px rgba(32,26,18,0.35)", ...style }}
+      style={{ ...TYPE, background: bg, color, borderRadius: 999, padding: small ? "10px 16px" : "14px 18px", fontSize: small ? 13 : 15, minHeight: small ? 38 : 48, letterSpacing: -0.1, boxShadow: disabled || kind === "ghost" ? "none" : "0 6px 16px -8px rgba(32,26,18,0.35)", ...style }}
     >
       {children}
     </button>
@@ -161,7 +161,7 @@ function PxInput({ value, onChange, placeholder, type = "text", maxLength, autoF
         value={value} onChange={onChange} placeholder={placeholder} type={type} maxLength={maxLength}
         autoFocus={autoFocus} onKeyDown={onKeyDown} inputMode={inputMode} spellCheck={false}
         className="w-full outline-none"
-        style={{ ...TYPE, background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 14, padding: "13px 15px", fontSize: 15, color: C.ink, ...style }}
+        style={{ ...TYPE, background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 14, padding: "13px 15px", fontSize: 16, color: C.ink, ...style }}
         onFocus={(e) => (e.target.style.borderColor = C.teal)}
         onBlur={(e) => (e.target.style.borderColor = C.line)}
       />
@@ -199,7 +199,7 @@ function PxAvatar({ user, size = 40, frame }) {
 function Toast({ toast }) {
   if (!toast) return null;
   return (
-    <div className="absolute left-4 right-4 flex justify-center pointer-events-none" style={{ bottom: 96, zIndex: 90 }}>
+    <div className="absolute left-4 right-4 flex justify-center pointer-events-none" style={{ bottom: "calc(96px + env(safe-area-inset-bottom))", zIndex: 90 }}>
       <div className="px-4 py-2.5 text-sm font-semibold text-center rounded-full" style={{ ...TYPE, background: C.ink, color: C.paper, boxShadow: "0 10px 24px -8px rgba(32,26,18,0.5)", animation: "toastUp 0.25s ease both" }}>
         {toast}
       </div>
@@ -753,7 +753,7 @@ const groupTrophies = (badges) => {
    made React remount the subtree on every keystroke (focus loss).   */
 function AuthShell({ children, onBack, progress }) {
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ ...TYPE, background: C.paper }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper }}>
       <div className="flex items-center h-12 px-2 shrink-0">
         {onBack && <button onClick={onBack} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={22} color={C.ink} /></button>}
         {progress != null && (
@@ -855,7 +855,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.1 · pushed live from Claude</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.2 · mobile-fit update</div>
       </div>
     </AuthShell>
   );
@@ -1028,7 +1028,7 @@ function CameraSheet({ onCapture, onClose }) {
   };
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ ...TYPE, background: C.night }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.night }}>
       <div className="flex items-center h-12 px-2 shrink-0">
         <button onClick={onClose} className="p-2"><X size={20} color={C.paper} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.paper }}>Proof of showing up</div>
@@ -1054,7 +1054,7 @@ function CameraSheet({ onCapture, onClose }) {
         )}
       </div>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
-      <div className="px-5 pt-3 pb-6 shrink-0">
+      <div className="px-5 pt-3 shrink-0" style={{ paddingBottom: "calc(24px + env(safe-area-inset-bottom))" }}>
         {!shot ? (
           <div className="flex items-center justify-between">
             <button onClick={() => fileRef.current?.click()} className="p-3" aria-label="Upload"><Upload size={20} color={C.paper} /></button>
@@ -1112,6 +1112,7 @@ function PostPhoto({ post, className }) {
 function PostCard({ post, person, isYou, people, comments, onLike, onReact, onComment, onOpenPerson }) {
   const [pop, setPop] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const lastTap = useRef(0);
   const top = (comments[post.id] || [])[0];
   const likedByP = post.likedBy ? people[post.likedBy] : null;
   return (
@@ -1129,8 +1130,12 @@ function PostCard({ post, person, isYou, people, comments, onLike, onReact, onCo
         </div>
         <div
           className="relative mx-2 overflow-hidden select-none"
-          style={{ aspectRatio: "4 / 5", border: BORDER, borderRadius: 5 }}
-          onDoubleClick={() => { if (!post.liked) onLike(post.id); setPop((p) => p + 1); }}
+          style={{ aspectRatio: "4 / 5", border: BORDER, borderRadius: 12, touchAction: "manipulation" }}
+          onPointerUp={() => {
+            const t = Date.now();
+            if (t - (lastTap.current || 0) < 320) { if (!post.liked) onLike(post.id); setPop((p) => p + 1); }
+            lastTap.current = t;
+          }}
         >
           <PostPhoto post={post} />
           <Scanlines opacity={0.04} />
@@ -1298,7 +1303,7 @@ function ComposerSheet({ st, core, onPost, onClose }) {
   if (step === "camera") return <CameraSheet onCapture={(p) => { setPhoto(p); setStep("finish"); }} onClose={() => setStep("pick")} />;
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ ...TYPE, background: C.paper }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper }}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={step === "pick" ? onClose : () => setStep("pick")} className="p-2">{step === "pick" ? <X size={20} color={C.ink} /> : <ChevronLeft size={20} color={C.ink} />}</button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>{step === "pick" ? "Show up" : "Almost there"}</div>
@@ -1448,7 +1453,7 @@ function NominateSheet({ st, onPick, onClose }) {
           <div className="text-base font-bold" style={{ color: C.ink }}>{picked ? "Pick a category" : "Enter one of your posts"}</div>
           <div className="text-xs mt-0.5" style={{ color: C.mute }}>{picked ? "Where does this one belong? Your call." : "One entry a week — the team picks winners Sunday."}</div>
         </div>
-        <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-8">
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4" style={{ paddingBottom: "calc(32px + env(safe-area-inset-bottom))" }}>
           {!picked && mine.length === 0 && (
             <div className="text-sm text-center py-8 px-6 leading-relaxed" style={{ color: C.faint }}>Nothing to enter yet — post today, then submit it here.</div>
           )}
@@ -1484,7 +1489,7 @@ function ShopSheet({ st, act, onClose }) {
   const [tab, setTab] = useState("banners");
   const items = tab === "coins" ? COIN_PACKS : SHOP[tab];
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ zIndex: 46, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
+    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 46, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold" style={{ color: C.ink }}>Style shop</div>
@@ -1676,7 +1681,7 @@ function BannerEditor({ st, act, onClose }) {
   const pinnable = [...st.myFeatured, ...groupTrophies(st.badges)];
   const pins = st.me.pins || [];
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ zIndex: 47, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
+    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 47, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold" style={{ color: C.ink }}>Edit banner</div>
@@ -1789,7 +1794,7 @@ function FriendSheet({ person, pairs, onClose }) {
   const theirBadges = useMemo(() => groupTrophies(badgesFor(person.progress || { Running: 34, Soccer: 8 })).slice(0, 8), [person]);
   const pair = pairs[person.id] || 0;
   return (
-    <div className="absolute inset-0 z-40 flex flex-col" style={{ ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
+    <div className="absolute inset-0 z-40 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>{person.name}</div>
@@ -1859,7 +1864,7 @@ function CommentsSheet({ postId, st, core, onAdd, onClose }) {
             );
           })}
         </div>
-        <div className="px-3 pb-4 pt-2 shrink-0" style={{ borderTop: `1.5px solid rgba(32,24,15,0.15)` }}>
+        <div className="px-3 pt-2 shrink-0" style={{ borderTop: `1.5px solid rgba(32,24,15,0.15)`, paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}>
           {g && (
             <div className="mb-2 p-2.5" style={{ ...px.flat, borderColor: g.verdict === "nudge" ? C.gold : C.coral }}>
               <div className="flex items-center gap-1.5">
@@ -1889,7 +1894,7 @@ function CommentsSheet({ postId, st, core, onAdd, onClose }) {
 /* ── NOTIFICATIONS ── */
 function NotifSheet({ st, act, onClose }) {
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>Activity</div>
@@ -2068,7 +2073,7 @@ function JourneyScreen({ activity, count, onSpotlight, onClose }) {
     scroller.current.scrollTop = Math.max(0, chFromTop * CH_H - 120);
   }, []);
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ zIndex: 45, ...TYPE, background: T.ch[4][0], animation: "sheetUp 0.28s ease both" }}>
+    <div className="absolute inset-0 flex flex-col" style={{ zIndex: 45, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: T.ch[4][0], animation: "sheetUp 0.28s ease both" }}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ background: "rgba(23,19,14,0.88)" }}>
         <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.paper} /></button>
         <div className="flex-1 text-center">
@@ -2128,7 +2133,7 @@ function JourneyScreen({ activity, count, onSpotlight, onClose }) {
 function ProgressScreen({ st, act, onClose }) {
   const rows = Object.entries(st.progress).sort((a, b) => b[1] - a[1]);
   return (
-    <div className="absolute inset-0 z-40 flex flex-col" style={{ ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
+    <div className="absolute inset-0 z-40 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>Progress</div>
@@ -2231,16 +2236,16 @@ function WrappedSheet({ st, onClose, onShare }) {
   const banner = st.me.banner || "field-day";
   return (
     <div className="absolute inset-0 flex flex-col select-none" style={{ zIndex: 59, ...TYPE, background: C.night }} onClick={next}>
-      <div className="absolute top-3 left-4 right-4 flex gap-1.5" style={{ zIndex: 4 }}>
+      <div className="absolute left-4 right-4 flex gap-1.5" style={{ top: "calc(12px + env(safe-area-inset-top))", zIndex: 4 }}>
         {Array.from({ length: slides }).map((_, k) => <span key={k} className="flex-1 rounded-full" style={{ height: 3.5, background: k <= i ? "#FFF" : "rgba(255,255,255,0.3)" }} />)}
       </div>
-      <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="absolute top-6 right-3 p-2" style={{ zIndex: 4 }}><X size={20} color="#FFF" /></button>
+      <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="absolute right-3 p-2.5" style={{ top: "calc(22px + env(safe-area-inset-top))", zIndex: 4 }}><X size={20} color="#FFF" /></button>
 
       {i === 0 && (
         <div className="relative flex-1">
           <BannerBackdrop id={banner} />
           {st.me.companion && <div className="absolute" style={{ right: 26, bottom: 190, animation: "bob 2.4s ease-in-out infinite", filter: "drop-shadow(0 3px 5px rgba(23,19,14,0.6))" }}><Companion id={st.me.companion} px={4.5} /></div>}
-          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center pb-16 px-8 text-center">
+          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-8 text-center" style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom))" }}>
             {st.pinBadges.length > 0 && (
               <div className="flex gap-2 mb-3">{st.pinBadges.map((b) => <div key={b.id} style={{ filter: "drop-shadow(0 3px 5px rgba(23,19,14,0.55))" }}><PixelBadge activity={b.activity} tier={b.tier} size={44} /></div>)}</div>
             )}
@@ -2296,7 +2301,7 @@ function PurchaseSheet({ purchase, me, onConfirm, onClose }) {
   return (
     <div className="absolute inset-0 flex flex-col justify-end" style={{ zIndex: 58, ...TYPE }}>
       <div className="absolute inset-0" style={{ background: "rgba(23,19,14,0.5)", animation: "fadeIn 0.2s ease both" }} onClick={onClose} />
-      <div className="relative px-5 pt-5 pb-8" style={{ background: C.card, borderRadius: "22px 22px 0 0", boxShadow: "0 -8px 30px rgba(23,19,14,0.25)", animation: "sheetUp 0.28s ease both" }}>
+      <div className="relative px-5 pt-5" style={{ paddingBottom: "calc(32px + env(safe-area-inset-bottom))", background: C.card, borderRadius: "22px 22px 0 0", boxShadow: "0 -8px 30px rgba(23,19,14,0.25)", animation: "sheetUp 0.28s ease both" }}>
         <div className="mx-auto rounded-full" style={{ width: 40, height: 4.5, background: C.line }} />
         <div className="flex items-center gap-3.5 pt-4">
           <div className="overflow-hidden shrink-0 flex items-center justify-center" style={{ width: 76, height: 56, borderRadius: 12, border: BORDER, background: C.field }}>
@@ -2335,7 +2340,7 @@ function SettingsSheet({ st, core, act, onClose }) {
     </div>
   );
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ zIndex: 55, ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }}>
+    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 55, ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>Settings</div>
@@ -2402,7 +2407,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.1 · pushed live from Claude · relentlessly kind</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.2 · mobile-fit · relentlessly kind</div>
       </div>
     </div>
   );
@@ -2412,12 +2417,12 @@ function SettingsSheet({ st, core, act, onClose }) {
 
 function BottomNav({ tab, setTab, onCompose }) {
   const Item = ({ id, icon: Icon }) => (
-    <button onClick={() => setTab(id)} className="flex-1 flex justify-center py-3 active:scale-90 transition-transform" aria-label={id}>
-      <Icon size={22} color={tab === id ? C.ink : C.faint} strokeWidth={tab === id ? 2.6 : 2} />
+    <button onClick={() => setTab(id)} className="flex-1 flex justify-center items-center active:scale-90 transition-transform" aria-label={id} style={{ minHeight: 52 }}>
+      <Icon size={23} color={tab === id ? C.ink : C.faint} strokeWidth={tab === id ? 2.6 : 2} />
     </button>
   );
   return (
-    <div className="shrink-0 flex items-center px-1" style={{ background: C.paper, borderTop: BORDER }}>
+    <div className="shrink-0 flex items-center px-1" style={{ background: C.paper, borderTop: BORDER, paddingBottom: "env(safe-area-inset-bottom)" }}>
       <Item id="feed" icon={Home} />
       <Item id="friends" icon={Users} />
       <div className="flex-1 flex justify-center py-2">
@@ -2681,9 +2686,10 @@ export default function App() {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spotIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes cardIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        button, input, a { touch-action: manipulation; } body { -webkit-text-size-adjust: 100%; }
       `}</style>
-      <div className="relative w-full h-full overflow-hidden flex flex-col" style={{ maxWidth: 420, background: C.paper, ...TYPE }}>
+      <div className="relative w-full h-full overflow-hidden flex flex-col" style={{ maxWidth: 520, background: C.paper, paddingTop: "env(safe-area-inset-top)", ...TYPE }}>
         {!session || !me ? (
           <AuthFlow core={core} onDone={onAuth} />
         ) : (
