@@ -855,7 +855,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.4 · true full-screen</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.5 · social polish</div>
       </div>
     </AuthShell>
   );
@@ -971,8 +971,6 @@ function CameraSheet({ onCapture, onClose }) {
   const [facing, setFacing] = useState("user");
   const [err, setErr] = useState("");
   const [shot, setShot] = useState(null);      // raw dataURL
-  const [bit8, setBit8] = useState(false);      // optional retro filter — off by default
-  const [chunk, setChunk] = useState(56);       // pixel resolution
   const fileRef = useRef(null);                 // library picker
   const captureRef = useRef(null);              // native camera (mobile)
 
@@ -998,27 +996,7 @@ function CameraSheet({ onCapture, onClose }) {
     ctx.drawImage(v, (v.videoWidth - side) / 2, (v.videoHeight - side * 1.25 < 0 ? 0 : (v.videoHeight - side * 1.25) / 2), side, side * 1.25, 0, 0, 480, 600);
     setShot(cv.toDataURL("image/jpeg", 0.9));
   };
-  const pixelate = (src, w) => new Promise((res) => {
-    const img = new Image();
-    img.onload = () => {
-      const small = document.createElement("canvas");
-      const h = Math.round((w * 5) / 4);
-      small.width = w; small.height = h;
-      const sctx = small.getContext("2d");
-      sctx.drawImage(img, 0, 0, w, h);
-      const out = document.createElement("canvas");
-      out.width = 480; out.height = 600;
-      const octx = out.getContext("2d");
-      octx.imageSmoothingEnabled = false;
-      octx.drawImage(small, 0, 0, 480, 600);
-      res(out.toDataURL("image/jpeg", 0.9));
-    };
-    img.src = src;
-  });
-  const use = async () => {
-    const final = bit8 ? await pixelate(shot, chunk) : shot;
-    onCapture(final);
-  };
+  const use = () => onCapture(shot);
   const onFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -1050,7 +1028,7 @@ function CameraSheet({ onCapture, onClose }) {
             <Scanlines opacity={0.08} />
           </>
         ) : (
-          <Bit8Preview src={shot} on={bit8} chunk={chunk} />
+          <img src={shot} alt="" className="absolute inset-0 w-full h-full object-cover" />
         )}
       </div>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
@@ -1062,42 +1040,14 @@ function CameraSheet({ onCapture, onClose }) {
             <button onClick={() => setFacing((f) => (f === "user" ? "environment" : "user"))} className="p-3" aria-label="Flip camera"><SwitchCamera size={20} color={C.paper} /></button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setBit8((b) => !b)} className="flex items-center gap-2 px-3 py-2 font-bold uppercase" style={{ ...TYPE, fontSize: 11, background: bit8 ? C.teal : "transparent", color: bit8 ? "#FFF" : C.paper, border: `2px solid ${C.paper}`, borderRadius: 6 }}>
-                <Wand2 size={13} /> 8-BIT filter {bit8 ? "on" : "off"}
-              </button>
-              {bit8 && (
-                <input type="range" min="24" max="96" step="8" value={chunk} onChange={(e) => setChunk(+e.target.value)} className="flex-1" style={{ accentColor: C.teal }} aria-label="Pixel size" />
-              )}
-            </div>
-            <div className="flex gap-2.5">
-              <PxButton full kind="ghost" onClick={() => setShot(null)} style={{ background: C.night, color: C.paper, borderColor: C.paper }}>Retake</PxButton>
-              <PxButton full onClick={use}>Use it</PxButton>
-            </div>
+          <div className="flex gap-2.5">
+            <PxButton full kind="ghost" onClick={() => setShot(null)} style={{ background: "rgba(250,247,241,0.14)", color: C.paper }}>Retake</PxButton>
+            <PxButton full onClick={use}>Use it</PxButton>
           </div>
         )}
       </div>
     </div>
   );
-}
-function Bit8Preview({ src, on, chunk }) {
-  const [out, setOut] = useState(src);
-  useEffect(() => {
-    if (!on) { setOut(src); return; }
-    const img = new Image();
-    img.onload = () => {
-      const w = chunk, h = Math.round((chunk * 5) / 4);
-      const small = document.createElement("canvas"); small.width = w; small.height = h;
-      small.getContext("2d").drawImage(img, 0, 0, w, h);
-      const big = document.createElement("canvas"); big.width = 480; big.height = 600;
-      const bctx = big.getContext("2d"); bctx.imageSmoothingEnabled = false;
-      bctx.drawImage(small, 0, 0, 480, 600);
-      setOut(big.toDataURL());
-    };
-    img.src = src;
-  }, [src, on, chunk]);
-  return <img src={out} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ imageRendering: "pixelated" }} />;
 }
 
 /* ═══════════════ 9. SURFACES ═══════════════ */
@@ -1109,11 +1059,13 @@ function PostPhoto({ post, className }) {
   return <img src={post.photo} alt="" loading="lazy" onError={() => setErr(true)} className={className || "absolute inset-0 w-full h-full object-cover"} />;
 }
 
-function PostCard({ post, person, isYou, people, comments, onLike, onReact, onComment, onOpenPerson }) {
+function PostCard({ post, person, isYou, people, comments, onLike, onReact, onComment, onOpenPerson, onMenu }) {
   const [pop, setPop] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
   const lastTap = useRef(0);
+  const [menuOpen, setMenuOpen] = useState(false);
   const top = (comments[post.id] || [])[0];
+  const count = (comments[post.id] || []).length;
   const likedByP = post.likedBy ? people[post.likedBy] : null;
   return (
     <div className="px-3 pt-3">
@@ -1127,6 +1079,21 @@ function PostCard({ post, person, isYou, people, comments, onLike, onReact, onCo
             </div>
           </button>
           <PxTag color={ACT_COLOR(post.activity)} ink="#FFF">{post.activity}</PxTag>
+          <div className="relative">
+            <button onClick={() => setMenuOpen((o) => !o)} className="p-1.5 active:scale-90 transition-transform" aria-label="More"><MoreHorizontal size={17} color={C.mute} /></button>
+            {menuOpen && (
+              <div className="absolute right-0 flex flex-col overflow-hidden" style={{ top: "calc(100% + 4px)", minWidth: 172, background: C.card, border: BORDER, borderRadius: 14, boxShadow: "0 10px 26px -10px rgba(23,19,14,0.35)", zIndex: 6, animation: "spotIn 0.16s ease both" }}>
+                {isYou ? (
+                  <button onClick={() => { setMenuOpen(false); onMenu("nominate", post); }} className="px-3.5 py-2.5 text-sm font-semibold text-left" style={{ color: C.ink }}>🏅 Enter into Featured</button>
+                ) : (
+                  <>
+                    <button onClick={() => { setMenuOpen(false); onMenu("share", post); }} className="px-3.5 py-2.5 text-sm font-semibold text-left" style={{ color: C.ink, borderBottom: `1px solid ${C.line}` }}>Share post</button>
+                    <button onClick={() => { setMenuOpen(false); onMenu("report", post); }} className="px-3.5 py-2.5 text-sm font-semibold text-left" style={{ color: C.coral }}>Report to Guardian</button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         <div
           className="relative mx-2 overflow-hidden select-none"
@@ -1173,6 +1140,7 @@ function PostCard({ post, person, isYou, people, comments, onLike, onReact, onCo
         )}
         {post.caption && <div className="px-3 pt-1 text-sm" style={{ color: C.ink }}><b>{isYou ? "you" : person.name.toLowerCase()}</b> {post.caption}</div>}
         {top && people[top.author] && <div className="px-3 pt-0.5 text-sm" style={{ color: C.ink }}><b>{people[top.author].name.toLowerCase()}</b> <span style={{ color: C.mute }}>{top.text}</span></div>}
+        {count > 1 && <button onClick={() => onComment(post.id)} className="px-3 pt-1 text-sm text-left" style={{ color: C.faint }}>View all {count} comments</button>}
         <div className="pb-2.5" />
       </div>
     </div>
@@ -1235,7 +1203,7 @@ function FeedScreen({ st, act }) {
   const topPair = pairs[0];
   return (
     <div className="pb-4">
-      <div className="relative flex items-center justify-center gap-2 h-12" style={{ borderBottom: BORDER }}>
+      <div className="sticky top-0 relative flex items-center justify-center gap-2 h-12" style={{ borderBottom: BORDER, background: C.paper, zIndex: 10 }}>
         <img src={LOGO} alt="" style={{ width: 26, height: 26 }} />
         <span className="font-bold tracking-tight" style={{ ...TYPE, fontSize: 17, color: C.ink, letterSpacing: -0.4 }}>ShowUp</span>
         <button onClick={act.openNotifs} className="absolute right-1.5 p-2 active:scale-90 transition-transform" aria-label="Activity">
@@ -1276,7 +1244,7 @@ function FeedScreen({ st, act }) {
         const person = isYou ? st.me : st.people[post.author];
         if (!person) return null;
         if (post.type === "milestone") return <MilestoneCard key={post.id} post={post} isYou={isYou} onOpenPerson={act.openPerson} onHype={act.hype} />;
-        return <PostCard key={post.id} post={post} person={person} isYou={isYou} people={st.people} comments={st.comments} onLike={act.like} onReact={act.react} onComment={act.openComments} onOpenPerson={act.openPerson} />;
+        return <PostCard key={post.id} post={post} person={person} isYou={isYou} people={st.people} comments={st.comments} onLike={act.like} onReact={act.react} onComment={act.openComments} onOpenPerson={act.openPerson} onMenu={act.postMenu} />;
       })}
       <div className="text-center text-xs py-6" style={{ color: C.faint }}>You're all caught up — kind place, this.</div>
     </div>
@@ -1441,9 +1409,9 @@ function FeaturedScreen({ st, act }) {
   );
 }
 
-function NominateSheet({ st, onPick, onClose }) {
+function NominateSheet({ st, initialPost, onPick, onClose }) {
   const mine = st.posts.filter((p) => !p.type && p.author === "you");
-  const [picked, setPicked] = useState(null);
+  const [picked, setPicked] = useState(initialPost || null);
   return (
     <div className="absolute inset-0 flex flex-col justify-end" style={{ zIndex: 58, ...TYPE }}>
       <div className="absolute inset-0" style={{ background: "rgba(23,19,14,0.5)", animation: "fadeIn 0.2s ease both" }} onClick={onClose} />
@@ -2418,7 +2386,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.4 · swipe-native · relentlessly kind</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.5 · social polish · relentlessly kind</div>
       </div>
     </div>
   );
@@ -2523,6 +2491,7 @@ export default function App() {
   const [bannerEditOpen, setBannerEditOpen] = useState(false);
   const [wrappedOpen, setWrappedOpen] = useState(false);
   const [nominateOpen, setNominateOpen] = useState(false);
+  const [nominateSeed, setNominateSeed] = useState(null);
   const [nominatedId, setNominatedId] = useState(null);
   const [nominatedCat, setNominatedCat] = useState(null);
   const [myFeatured, setMyFeatured] = useState([]);
@@ -2627,6 +2596,20 @@ export default function App() {
       return { ...m, pins: [...pins, id] };
     }),
     openNominate: () => setNominateOpen(true),
+    postMenu: (kind, post) => {
+      if (kind === "share") {
+        const person = people[post.author];
+        if (navigator.share) {
+          navigator.share({ title: "ShowUp", text: `${person?.name || "A friend"} showed up — ${post.activity}${post.caption ? ` · "${post.caption}"` : ""}`, url: window.location.href }).catch(() => {});
+        } else { showToast("Copied the vibe — sharing works on your phone."); }
+        core.log("SHARE", post.id);
+      }
+      if (kind === "report") { core.log("GUARDIAN_REPORT", post.id); showToast("Thanks — the Guardian will take a look."); }
+      if (kind === "nominate") {
+        if (nominatedId) { showToast("This week's entry is used — resets Monday."); return; }
+        setNominateSeed(post); setNominateOpen(true);
+      }
+    },
     nominate: (post, cat) => {
       setNominatedId(post.id); setNominatedCat(cat);
       setNominateOpen(false);
@@ -2724,7 +2707,7 @@ export default function App() {
 
   /* ── shell ── */
   return (
-    <div className="relative w-full flex justify-center overflow-hidden" style={{ height: "var(--app-height, 100dvh)", background: C.paper }}>
+    <div className="app-root relative w-full flex justify-center overflow-hidden" style={{ height: "var(--app-height, 100vh)", background: C.paper }}>
       <style>{`
         @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
         @keyframes heartPop { 0% { transform: scale(0.4); opacity: 0; } 30% { transform: scale(1.15); opacity: 1; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
@@ -2735,6 +2718,7 @@ export default function App() {
         @keyframes slideL { from { transform: translateX(26px); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideR { from { transform: translateX(-26px); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }
         @keyframes cardIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @supports (height: 100dvh) { .app-root { height: 100dvh !important; } }
         .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         button, input, a { touch-action: manipulation; } body { -webkit-text-size-adjust: 100%; }
       `}</style>
@@ -2755,7 +2739,7 @@ export default function App() {
             {shopOpen && <ShopSheet st={st} act={act} onClose={() => setShopOpen(false)} />}
             {bannerEditOpen && <BannerEditor st={st} act={act} onClose={() => setBannerEditOpen(false)} />}
             {wrappedOpen && <WrappedSheet st={st} onClose={() => setWrappedOpen(false)} onShare={() => { core.log("WRAP_SHARED", "June share card"); setWrappedOpen(false); showToast("Share card saved — post it anywhere. ✨"); }} />}
-            {nominateOpen && <NominateSheet st={st} onPick={act.nominate} onClose={() => setNominateOpen(false)} />}
+            {nominateOpen && <NominateSheet st={st} initialPost={nominateSeed} onPick={act.nominate} onClose={() => { setNominateOpen(false); setNominateSeed(null); }} />}
             {progressOpen && <ProgressScreen st={st} act={{ ...act, openJourney: (a) => setJourneyFor(a) }} onClose={() => setProgressOpen(false)} />}
             {journeyFor && <JourneyScreen activity={journeyFor} count={progress[journeyFor] || 0} onSpotlight={(b) => setSpot(b)} onClose={() => setJourneyFor(null)} />}
             {notifOpen && <NotifSheet st={st} act={{ ...act, accept: (r) => { act.accept(r); }, spotlight: (b) => { setSpot({ ...b, locked: false }); } }} onClose={() => setNotifOpen(false)} />}
