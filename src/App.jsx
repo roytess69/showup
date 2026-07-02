@@ -684,15 +684,15 @@ const SEED_FRIENDS = [
 const SEED_PAIRS = { sofia: 12, maya: 9, lena: 3, dev: 2 };
 const PAIR_MS = [10, 25, 50, 100];
 const SEED_POSTS = [
-  { id: "p1", author: "jake", time: "26m", place: "Home gym", activity: "Lifting", caption: "leg day. walking is optional now", scene: 4, photo: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&h=1000&q=70", likes: 9, likedBy: "sofia", liked: false, reactions: { "💪": 4 }, praised: false },
+  { id: "p1", author: "jake", time: "26m", place: "Home gym", activity: "Lifting", caption: "leg day. walking is optional now", scene: 4, photo: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=800&h=1000&q=70", likes: 9, likedBy: "sofia", liked: false, reactions: { "💪": 4 }, praised: false },
   { id: "ms1", type: "milestone", author: "maya", time: "2h", text: "Maya unlocked Just Jogging", sub: "30 days of running, all-time", activity: "Running", tier: 2, hype: 7 },
-  { id: "p2", author: "sofia", time: "3h", place: "Ann Morrison Park", activity: "Soccer", caption: "five-a-side friday", scene: 1, photo: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=800&h=1000&q=70", likes: 23, likedBy: "maya", liked: false, reactions: { "🔥": 6, "👏": 2 }, praised: false },
-  { id: "mem1", type: "memory", text: "You and Sofia showed up together — Soccer at the park", sub: "From your June 2025", scene: 7, photo: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&w=800&h=1000&q=70" },
+  { id: "p2", author: "sofia", time: "3h", place: "Ann Morrison Park", activity: "Soccer", caption: "five-a-side friday", scene: 1, photo: "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=800&h=1000&q=70", likes: 23, likedBy: "maya", liked: false, reactions: { "🔥": 6, "👏": 2 }, praised: false },
+  { id: "mem1", type: "memory", text: "You and Sofia showed up together — Soccer at the park", sub: "From your June 2025", scene: 7, photo: "https://images.unsplash.com/photo-1459865264687-595d652de67e?auto=format&fit=crop&w=800&h=1000&q=70" },
   { id: "p3", author: "lena", time: "4h", place: "YMCA pool", activity: "Swimming", caption: "legs said no, pool said yes", scene: 2, photo: "https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=800&h=1000&q=70", likes: 11, likedBy: "maya", liked: false, reactions: { "🙌": 2 }, praised: false },
   { id: "ms2", type: "milestone", author: "sofia", time: "5h", text: "Sofia hit a 230-day streak", sub: "Two hundred and thirty. Days.", streak: true, hype: 12 },
-  { id: "p4", author: "dev", time: "6h", place: "Backyard", activity: "Meditation", caption: "10 minutes, zero thoughts (two thoughts)", scene: 5, photo: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&h=1000&q=70", likes: 7, likedBy: "maya", liked: false, reactions: { "✨": 2 }, praised: false },
-  { id: "p5", author: "maya", time: "8h", place: "Greenbelt", activity: "Running", caption: "before the heat", scene: 0, photo: "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=800&h=1000&q=70", likes: 15, likedBy: "sofia", liked: false, reactions: { "🔥": 4 }, praised: false },
-  { id: "p6", author: "omar", time: "9h", place: "Foothills", activity: "Walking", caption: "golden hour delivered", scene: 6, photo: "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=800&h=1000&q=70", likes: 13, likedBy: "lena", liked: false, reactions: { "✨": 3 }, praised: false },
+  { id: "p4", author: "dev", time: "6h", place: "Backyard", activity: "Meditation", caption: "10 minutes, zero thoughts (two thoughts)", scene: 5, photo: "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?auto=format&fit=crop&w=800&h=1000&q=70", likes: 7, likedBy: "maya", liked: false, reactions: { "✨": 2 }, praised: false },
+  { id: "p5", author: "maya", time: "8h", place: "Greenbelt", activity: "Running", caption: "before the heat", scene: 0, photo: "https://images.unsplash.com/photo-1571008887538-b36bb32f4571?auto=format&fit=crop&w=800&h=1000&q=70", likes: 15, likedBy: "sofia", liked: false, reactions: { "🔥": 4 }, praised: false },
+  { id: "p6", author: "omar", time: "9h", place: "Foothills", activity: "Walking", caption: "golden hour delivered", scene: 6, photo: "https://images.unsplash.com/photo-1483721310020-03333e577078?auto=format&fit=crop&w=800&h=1000&q=70", likes: 13, likedBy: "lena", liked: false, reactions: { "✨": 3 }, praised: false },
 ];
 const SEED_COMMENTS = {
   p1: [{ id: 1, author: "sofia", text: "barely still counts 💪" }, { id: 2, author: "dev", text: "up we go" }],
@@ -855,7 +855,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.2 · mobile-fit update</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.3 · swipes + full-screen</div>
       </div>
     </AuthShell>
   );
@@ -1260,7 +1260,7 @@ function FeedScreen({ st, act }) {
         </button>
       )}
       {pairs.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar px-3 py-2" style={{ borderBottom: BORDER }}>
+        <div className="hscroll flex gap-2 overflow-x-auto no-scrollbar px-3 py-2" style={{ borderBottom: BORDER }}>
           {pairs.map((p) => (
             <button key={p.id} onClick={() => act.openPerson(p.id)} className="flex items-center gap-1.5 pl-1 pr-2.5 py-1 shrink-0 active:scale-95 transition-transform" style={px.chip}>
               <div className="flex"><div style={{ zIndex: 1 }}><PxAvatar user={st.me} size={20} /></div><div style={{ marginLeft: -7 }}><PxAvatar user={p} size={20} /></div></div>
@@ -1303,7 +1303,7 @@ function ComposerSheet({ st, core, onPost, onClose }) {
   if (step === "camera") return <CameraSheet onCapture={(p) => { setPhoto(p); setStep("finish"); }} onClose={() => setStep("pick")} />;
 
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper }} {...swipeBack(step === "pick" ? onClose : () => setStep("pick"))}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={step === "pick" ? onClose : () => setStep("pick")} className="p-2">{step === "pick" ? <X size={20} color={C.ink} /> : <ChevronLeft size={20} color={C.ink} />}</button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>{step === "pick" ? "Show up" : "Almost there"}</div>
@@ -1340,7 +1340,7 @@ function ComposerSheet({ st, core, onPost, onClose }) {
             <button onClick={() => setStep("camera")} className="absolute bottom-2 right-2 px-2.5 py-1.5 text-xs font-bold uppercase" style={{ ...TYPE, background: C.paper, border: BORDER, borderRadius: 5 }}>Retake</button>
           </div>
           <div className="text-xs font-bold uppercase tracking-widest pt-4 pb-1.5" style={{ color: C.faint }}>With anyone?</div>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          <div className="hscroll flex gap-2 overflow-x-auto no-scrollbar pb-1">
             {st.friends.map((f) => {
               const on = withIds.includes(f.id);
               return (
@@ -1447,7 +1447,7 @@ function NominateSheet({ st, onPick, onClose }) {
   return (
     <div className="absolute inset-0 flex flex-col justify-end" style={{ zIndex: 58, ...TYPE }}>
       <div className="absolute inset-0" style={{ background: "rgba(23,19,14,0.5)", animation: "fadeIn 0.2s ease both" }} onClick={onClose} />
-      <div className="relative flex flex-col" style={{ background: C.paper, borderRadius: "22px 22px 0 0", maxHeight: "80%", animation: "sheetUp 0.28s ease both" }}>
+      <div className="relative flex flex-col" style={{ background: C.paper, borderRadius: "22px 22px 0 0", maxHeight: "80%", animation: "sheetUp 0.28s ease both" }} {...swipeDown(onClose)}>
         <div className="pt-3 pb-2 text-center shrink-0">
           <div className="mx-auto rounded-full mb-3" style={{ width: 40, height: 4.5, background: C.line }} />
           <div className="text-base font-bold" style={{ color: C.ink }}>{picked ? "Pick a category" : "Enter one of your posts"}</div>
@@ -1489,7 +1489,7 @@ function ShopSheet({ st, act, onClose }) {
   const [tab, setTab] = useState("banners");
   const items = tab === "coins" ? COIN_PACKS : SHOP[tab];
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 46, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
+    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 46, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold" style={{ color: C.ink }}>Style shop</div>
@@ -1681,7 +1681,7 @@ function BannerEditor({ st, act, onClose }) {
   const pinnable = [...st.myFeatured, ...groupTrophies(st.badges)];
   const pins = st.me.pins || [];
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 47, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
+    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 47, ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold" style={{ color: C.ink }}>Edit banner</div>
@@ -1794,7 +1794,7 @@ function FriendSheet({ person, pairs, onClose }) {
   const theirBadges = useMemo(() => groupTrophies(badgesFor(person.progress || { Running: 34, Soccer: 8 })).slice(0, 8), [person]);
   const pair = pairs[person.id] || 0;
   return (
-    <div className="absolute inset-0 z-40 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
+    <div className="absolute inset-0 z-40 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>{person.name}</div>
@@ -1846,7 +1846,7 @@ function CommentsSheet({ postId, st, core, onAdd, onClose }) {
   return (
     <div className="absolute inset-0 z-50 flex flex-col justify-end" style={TYPE}>
       <div className="absolute inset-0" style={{ background: "rgba(32,24,15,0.5)" }} onClick={onClose} />
-      <div className="relative flex flex-col" style={{ background: C.paper, borderTop: BORDER, maxHeight: "72%", animation: "sheetUp 0.25s ease both" }}>
+      <div className="relative flex flex-col" style={{ background: C.paper, borderTop: BORDER, maxHeight: "72%", animation: "sheetUp 0.25s ease both" }} {...swipeDown(onClose)}>
         <div className="flex items-center h-11 px-2 shrink-0" style={{ borderBottom: BORDER }}>
           <span style={{ width: 36 }} />
           <div className="flex-1 text-center text-xs font-bold uppercase tracking-widest" style={{ color: C.ink }}>Comments</div>
@@ -1894,7 +1894,7 @@ function CommentsSheet({ postId, st, core, onAdd, onClose }) {
 /* ── NOTIFICATIONS ── */
 function NotifSheet({ st, act, onClose }) {
   return (
-    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }}>
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>Activity</div>
@@ -2073,7 +2073,7 @@ function JourneyScreen({ activity, count, onSpotlight, onClose }) {
     scroller.current.scrollTop = Math.max(0, chFromTop * CH_H - 120);
   }, []);
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ zIndex: 45, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: T.ch[4][0], animation: "sheetUp 0.28s ease both" }}>
+    <div className="absolute inset-0 flex flex-col" style={{ zIndex: 45, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: T.ch[4][0], animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ background: "rgba(23,19,14,0.88)" }}>
         <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.paper} /></button>
         <div className="flex-1 text-center">
@@ -2133,7 +2133,7 @@ function JourneyScreen({ activity, count, onSpotlight, onClose }) {
 function ProgressScreen({ st, act, onClose }) {
   const rows = Object.entries(st.progress).sort((a, b) => b[1] - a[1]);
   return (
-    <div className="absolute inset-0 z-40 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }}>
+    <div className="absolute inset-0 z-40 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>Progress</div>
@@ -2233,9 +2233,20 @@ function WrappedSheet({ st, onClose, onShare }) {
   const pairFriend = pairTop ? st.people[pairTop[0]] : null;
   const slides = 4;
   const next = () => (i >= slides - 1 ? onClose() : setI(i + 1));
+  const back = () => setI((x) => Math.max(0, x - 1));
+  const wt = useRef({ x: 0, y: 0 });
+  const wrapSwipe = {
+    onTouchStart: (e) => { wt.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; },
+    onTouchEnd: (e) => {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - wt.current.x, dy = t.clientY - wt.current.y;
+      if (dy > 90 && Math.abs(dx) < 70) { onClose(); return; }
+      if (Math.abs(dx) > 70 && Math.abs(dy) < 60) { dx < 0 ? next() : back(); }
+    },
+  };
   const banner = st.me.banner || "field-day";
   return (
-    <div className="absolute inset-0 flex flex-col select-none" style={{ zIndex: 59, ...TYPE, background: C.night }} onClick={next}>
+    <div className="absolute inset-0 flex flex-col select-none" style={{ zIndex: 59, ...TYPE, background: C.night }} onClick={next} {...wrapSwipe}>
       <div className="absolute left-4 right-4 flex gap-1.5" style={{ top: "calc(12px + env(safe-area-inset-top))", zIndex: 4 }}>
         {Array.from({ length: slides }).map((_, k) => <span key={k} className="flex-1 rounded-full" style={{ height: 3.5, background: k <= i ? "#FFF" : "rgba(255,255,255,0.3)" }} />)}
       </div>
@@ -2301,7 +2312,7 @@ function PurchaseSheet({ purchase, me, onConfirm, onClose }) {
   return (
     <div className="absolute inset-0 flex flex-col justify-end" style={{ zIndex: 58, ...TYPE }}>
       <div className="absolute inset-0" style={{ background: "rgba(23,19,14,0.5)", animation: "fadeIn 0.2s ease both" }} onClick={onClose} />
-      <div className="relative px-5 pt-5" style={{ paddingBottom: "calc(32px + env(safe-area-inset-bottom))", background: C.card, borderRadius: "22px 22px 0 0", boxShadow: "0 -8px 30px rgba(23,19,14,0.25)", animation: "sheetUp 0.28s ease both" }}>
+      <div className="relative px-5 pt-5" style={{ paddingBottom: "calc(32px + env(safe-area-inset-bottom))", background: C.card, borderRadius: "22px 22px 0 0", boxShadow: "0 -8px 30px rgba(23,19,14,0.25)", animation: "sheetUp 0.28s ease both" }} {...swipeDown(onClose)}>
         <div className="mx-auto rounded-full" style={{ width: 40, height: 4.5, background: C.line }} />
         <div className="flex items-center gap-3.5 pt-4">
           <div className="overflow-hidden shrink-0 flex items-center justify-center" style={{ width: 76, height: 56, borderRadius: 12, border: BORDER, background: C.field }}>
@@ -2340,7 +2351,7 @@ function SettingsSheet({ st, core, act, onClose }) {
     </div>
   );
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 55, ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }}>
+    <div className="absolute inset-0 flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)", zIndex: 55, ...TYPE, background: C.paper, animation: "sheetUp 0.25s ease both" }} {...swipeBack(onClose)}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
         <button onClick={onClose} className="p-2"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold uppercase tracking-widest" style={{ color: C.ink }}>Settings</div>
@@ -2407,13 +2418,30 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.2 · mobile-fit · relentlessly kind</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.3 · swipe-native · relentlessly kind</div>
       </div>
     </div>
   );
 }
 
 /* ═══════════════ THE APP — everything, wired ═══════════════ */
+
+/* ── gesture helpers: swipe-right to go back, swipe-down to dismiss sheets ── */
+const swipeBack = (onClose) => {
+  let x0 = 0, y0 = 0;
+  return {
+    onTouchStart: (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; },
+    onTouchEnd: (e) => { const t = e.changedTouches[0]; if (t.clientX - x0 > 80 && Math.abs(t.clientY - y0) < 70) onClose(); },
+  };
+};
+const swipeDown = (onClose) => {
+  let x0 = 0, y0 = 0;
+  return {
+    onTouchStart: (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; },
+    onTouchEnd: (e) => { const t = e.changedTouches[0]; if (t.clientY - y0 > 80 && Math.abs(t.clientX - x0) < 70) onClose(); },
+  };
+};
+const TAB_ORDER = ["feed", "friends", "featured", "profile"];
 
 function BottomNav({ tab, setTab, onCompose }) {
   const Item = ({ id, icon: Icon }) => (
@@ -2503,7 +2531,26 @@ export default function App() {
   const [notifs, setNotifs] = useState([]);
   const [notifSeen, setNotifSeen] = useState(false);
 
-  const [tab, setTab] = useState("feed");
+  const [tab, setTabRaw] = useState("feed");
+  const [slideDir, setSlideDir] = useState(null);
+  const setTab = (next) => {
+    const from = TAB_ORDER.indexOf(tab), to = TAB_ORDER.indexOf(next);
+    setSlideDir(from === -1 || to === -1 || from === to ? null : to > from ? "L" : "R");
+    setTabRaw(next);
+  };
+  const tabTouch = useRef({ x: 0, y: 0 });
+  const tabSwipe = {
+    onTouchStart: (e) => { tabTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, skip: !!e.target.closest(".hscroll") }; },
+    onTouchEnd: (e) => {
+      if (tabTouch.current.skip) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - tabTouch.current.x, dy = t.clientY - tabTouch.current.y;
+      if (Math.abs(dx) < 70 || Math.abs(dy) > 60) return;
+      const i = TAB_ORDER.indexOf(tab);
+      const next = TAB_ORDER[i + (dx < 0 ? 1 : -1)];
+      if (next) setTab(next);
+    },
+  };
   const [composerOpen, setComposerOpen] = useState(false);
   const [commentsFor, setCommentsFor] = useState(null);
   const [friendView, setFriendView] = useState(null);
@@ -2677,7 +2724,7 @@ export default function App() {
 
   /* ── shell ── */
   return (
-    <div className="fixed inset-0 flex justify-center" style={{ background: "#14100C" }}>
+    <div className="fixed inset-0 flex justify-center" style={{ background: C.paper }}>
       <style>{`
         @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
         @keyframes heartPop { 0% { transform: scale(0.4); opacity: 0; } 30% { transform: scale(1.15); opacity: 1; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
@@ -2685,6 +2732,8 @@ export default function App() {
         @keyframes toastUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spotIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes slideL { from { transform: translateX(26px); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideR { from { transform: translateX(-26px); opacity: 0.4; } to { transform: translateX(0); opacity: 1; } }
         @keyframes cardIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         button, input, a { touch-action: manipulation; } body { -webkit-text-size-adjust: 100%; }
@@ -2694,7 +2743,7 @@ export default function App() {
           <AuthFlow core={core} onDone={onAuth} />
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto no-scrollbar">
+            <div key={tab} className="flex-1 overflow-y-auto no-scrollbar" style={{ animation: slideDir ? `slide${slideDir} 0.22s ease both` : undefined }} {...tabSwipe}>
               {tab === "feed" && <FeedScreen st={st} act={act} />}
               {tab === "friends" && <FriendsScreen st={st} act={act} />}
               {tab === "featured" && <FeaturedScreen st={st} act={act} />}
