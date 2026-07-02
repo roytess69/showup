@@ -290,7 +290,7 @@ const gNormalize = (t) => {
 const GUARDIAN_SALT = "gsalt-v1";
 const HARASS = ["ugly", "loser", "pathetic", "stupid", "idiot", "dumb", "trash", "garbage", "worthless", "fat", "fatty", "gross", "disgusting", "hate you", "nobody likes", "no one likes", "worst", "embarrassing", "lame", "weak", "quitter", "failure", "cringe", "shut up", "give up"];
 const CRISIS = ["kys", "kill yourself", "killyourself", "go die", "godie", "hurt yourself", "end it"];
-const PRAISE_SWAPS = ["You showed up — that's the whole game 💪", "Respect the consistency 🔥", "Love to see it — keep going!", "Day counted. Proud of you.", "This is the energy 🙌"];
+
 
 function makeGuardian(getBlockHashes, log) {
   const strikes = { count: 0, lockedUntil: 0 };
@@ -308,7 +308,7 @@ function makeGuardian(getBlockHashes, log) {
           strikes.count++;
           if (strikes.count >= 3) { strikes.lockedUntil = now() + 24 * 60 * MIN; log("GUARDIAN_LOCK", "3 hard blocks → 24h cooldown"); }
           log("GUARDIAN_BLOCK", `${ctx} · blocklist match`);
-          return { verdict: "block", message: "That language doesn't belong here — and it won't post. ShowUp stays kind." };
+          return { verdict: "block", message: "That won't post here." };
         }
       }
       /* L4: crisis phrases */
@@ -322,7 +322,7 @@ function makeGuardian(getBlockHashes, log) {
       const hit = HARASS.find((p) => (p.includes(" ") ? joined.includes(p) : words.includes(p) || dedup.includes(p.replace(/\s/g, ""))));
       if (hit) {
         log("GUARDIAN_NUDGE", `${ctx} · negativity`);
-        return { verdict: "nudge", message: "Check the vibe — this reads harsh. Try one of these instead:", swaps: PRAISE_SWAPS.slice(0, 3) };
+        return { verdict: "nudge", message: "This reads a little harsh — give it another pass." };
       }
       return { verdict: "pass" };
     },
@@ -462,15 +462,28 @@ const ACT_COLOR = (a) => {
 /* ═══════════════ 6. ART — badges, banners, frames, scenes ═══════════════ */
 
 /* tier frames escalate: wood → stone → silver → gold → gem → prismatic */
+/* each Featured category mints its own badge art */
+const FEATURED_META = {
+  "Most Artsy":      { spr: "note",   f: { o: "#8A3E9E", i: "#C878E8", bg: "#F0DCFA" } },
+  "Most Beautiful":  { spr: "heart",  f: { o: "#C2497C", i: "#E886A0", bg: "#FAE0EA" } },
+  "Golden Hour":     { spr: "sun",    f: { o: "#A8781E", i: "#F2C14B", bg: "#FBEBC0" } },
+  "Best Vibe":       { spr: "leaf",   f: { o: "#3E8A78", i: "#5ECCB0", bg: "#D8F4EA" } },
+  "The Grit Award":  { spr: "flame",  f: { o: "#B23A28", i: "#E8563F", bg: "#FADFD8" } },
+  "Squad Energy":    { spr: "laurel", f: { o: "#2A5A96", i: "#6FA0D8", bg: "#DCEAF8" } },
+  "Funniest Frame":  { spr: "ghost",  f: { o: "#5E6670", i: "#9AA2AC", bg: "#EEF3F8" } },
+  "Wildcard":        { spr: "star",   f: { o: "#C8901A", i: "#F2B93B", bg: "#FBEBC0" } },
+};
+
 const TIER_FRAME = [
   { o: "#8A5A38", i: "#B08050", bg: "#E8D8B8" }, { o: "#5E6670", i: "#9AA2AC", bg: "#DDE2E8" },
   { o: "#7E8A96", i: "#C8D2DC", bg: "#EEF3F8" }, { o: "#A8781E", i: "#F2C14B", bg: "#FBEBC0" },
   { o: "#3E8A78", i: "#5ECCB0", bg: "#D8F4EA" }, { o: "#7C3EB8", i: "#C878E8", bg: "#F0DCFA" },
 ];
-function PixelBadge({ activity, tier = 1, size = 56, streak }) {
-  const f = TIER_FRAME[Math.min(5, tier - 1)];
+function PixelBadge({ activity, tier = 1, size = 56, streak, featuredCat }) {
+  const fm = featuredCat ? FEATURED_META[featuredCat] || FEATURED_META["Wildcard"] : null;
+  const f = fm ? fm.f : TIER_FRAME[Math.min(5, tier - 1)];
   const s = size / 16;
-  const icon = streak ? "flame" : SPRITE_OF(activity);
+  const icon = fm ? fm.spr : streak ? "flame" : SPRITE_OF(activity);
   const iconPal = { k: C.ink, w: "#FFF", g: "#3E8A4E", G: "#5EAA6E", r: C.coral, o: "#F28C3B", y: C.gold, Y: "#F8D878", b: C.blue, p: C.violet, t: "#C89858", T: "#F2D8A8" };
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -726,6 +739,70 @@ const FEATURED_WEEK = {
 };
 /* categories you can enter your own post into — pick at your discretion */
 const NOMINATE_CATS = ["Most Artsy", "Most Beautiful", "Golden Hour", "Best Vibe", "The Grit Award", "Squad Energy", "Funniest Frame", "Wildcard"];
+/* your private month-by-month photo history (only you can open this) */
+const buildDemoHistory = () => {
+  const acts = ["Golf", "Running", "Lifting", "Yoga", "Soccer", "Meditation", "Walking", "Swimming"];
+  const skip = new Set([3, 7, 12, 19, 22, 28]);
+  const june = {};
+  for (let d = 1; d <= 30; d++) if (!skip.has(d)) june[d] = { activity: acts[(d * 5) % acts.length], scene: (d * 13) % 8 };
+  return { 6: june, 7: {} };
+};
+const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTH_META = { 6: { days: 30, firstDow: 1 }, 7: { days: 31, firstDow: 3 } }; // June 2026 starts Mon, July Wed
+
+function HistorySheet({ st, onClose }) {
+  const [month, setMonth] = useState(6);
+  const [light, setLight] = useState(null);
+  const meta = MONTH_META[month];
+  const entries = st.history[month] || {};
+  return (
+    <div className="absolute inset-0 flex flex-col" style={{ zIndex: 48, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
+      <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
+        <button onClick={onClose} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
+        <div className="flex-1 text-center">
+          <div className="text-sm font-bold" style={{ color: C.ink }}>Your days</div>
+          <div className="leading-tight" style={{ fontSize: 10.5, color: C.faint }}>Only you see this</div>
+        </div>
+        <span style={{ width: 36 }} />
+      </div>
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <button onClick={() => setMonth(6)} className="p-2 active:scale-90 transition-transform" style={{ opacity: month === 6 ? 0.25 : 1 }} aria-label="Previous month"><ChevronLeft size={18} color={C.ink} /></button>
+        <span className="text-base font-bold" style={{ color: C.ink }}>{MONTH_NAMES[month]} 2026</span>
+        <button onClick={() => setMonth(7)} className="p-2 active:scale-90 transition-transform" style={{ opacity: month === 7 ? 0.25 : 1 }} aria-label="Next month"><ChevronRight size={18} color={C.ink} /></button>
+      </div>
+      <div className="grid grid-cols-7 px-3 pb-1">
+        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => <div key={i} className="text-center text-xs font-bold py-1" style={{ color: C.faint }}>{d}</div>)}
+      </div>
+      <div className="flex-1 overflow-y-auto no-scrollbar px-3 pb-8">
+        <div className="grid grid-cols-7 gap-1.5">
+          {Array.from({ length: meta.firstDow }).map((_, i) => <span key={`b${i}`} />)}
+          {Array.from({ length: meta.days }).map((_, i) => {
+            const d = i + 1;
+            const e = entries[d];
+            return (
+              <button key={d} onClick={e ? () => setLight({ d, e }) : undefined} className="relative overflow-hidden active:scale-95 transition-transform" style={{ aspectRatio: "1", borderRadius: 10, background: e ? C.card : "transparent", border: e ? BORDER : `1px dashed ${C.line}` }}>
+                {e && (e.photo ? <img src={e.photo} alt="" className="absolute inset-0 w-full h-full object-cover" /> : <PixelScene seed={e.scene} />)}
+                <span className="absolute top-0.5 left-1 font-bold" style={{ fontSize: 9.5, color: e ? "#FFF" : C.faint, textShadow: e ? "0 1px 2px rgba(23,19,14,0.7)" : "none" }}>{d}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {light && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-7" style={{ zIndex: 5, background: "rgba(23,19,14,0.82)", animation: "fadeIn 0.18s ease both" }} onClick={() => setLight(null)}>
+          <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4 / 5", borderRadius: 18, maxWidth: 330 }}>
+            {light.e.photo ? <img src={light.e.photo} alt="" className="absolute inset-0 w-full h-full object-cover" /> : <PixelScene seed={light.e.scene} />}
+          </div>
+          <div className="flex items-center gap-2 pt-3">
+            <PxTag color={ACT_COLOR(light.e.activity)} ink="#FFF">{light.e.activity}</PxTag>
+            <span className="text-sm font-semibold text-white">{MONTH_NAMES[month]} {light.d}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const SEED_MY_FEATURED = [
   { id: "fw24", kind: "featured", activity: "Featured", tier: 5, name: "Golden Hour — Wk 24", cat: "Most Beautiful" },
 ];
@@ -855,7 +932,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.5 · social polish</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.6 · your days + quiet Guardian</div>
       </div>
     </AuthShell>
   );
@@ -921,8 +998,7 @@ function AuthFlow({ core, onDone }) {
           <PxAvatar user={{ name: dname || "?", photo, avatarSeed: (uname.length + dname.length) % 8 }} size={88} />
           <span className="absolute -bottom-1 -right-1 rounded-full flex items-center justify-center" style={{ width: 28, height: 28, background: C.teal, border: `2.5px solid ${C.paper}` }}><Camera size={13} color="#FFF" /></span>
         </button>
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
-      <input ref={captureRef} type="file" accept="image/*" capture="user" className="hidden" onChange={onFile} />
+        <input ref={captureRef} type="file" accept="image/*" capture="user" className="hidden" onChange={onFile} />
       </div>
       <div className="mt-5 flex flex-col gap-3">
         <PxInput value={dname} onChange={(e) => { setDname(e.target.value); setErr(""); }} placeholder="Full name" maxLength={30} />
@@ -971,7 +1047,6 @@ function CameraSheet({ onCapture, onClose }) {
   const [facing, setFacing] = useState("user");
   const [err, setErr] = useState("");
   const [shot, setShot] = useState(null);      // raw dataURL
-  const fileRef = useRef(null);                 // library picker
   const captureRef = useRef(null);              // native camera (mobile)
 
   const start = useCallback(async (mode) => {
@@ -1022,7 +1097,6 @@ function CameraSheet({ onCapture, onClose }) {
                 <div className="text-sm font-semibold" style={{ color: C.paper }}>The in-app preview is blocked here</div>
                 <div className="text-xs -mt-1 leading-relaxed" style={{ color: "rgba(250,247,241,0.65)" }}>No problem — this button opens your phone's real camera.</div>
                 <PxButton onClick={() => captureRef.current?.click()}><span className="inline-flex items-center gap-2"><Camera size={14} /> Take a photo</span></PxButton>
-                <button onClick={() => fileRef.current?.click()} className="text-xs font-semibold" style={{ ...TYPE, color: "rgba(250,247,241,0.8)" }}>or choose from your library</button>
               </div>
             )}
             <Scanlines opacity={0.08} />
@@ -1035,7 +1109,7 @@ function CameraSheet({ onCapture, onClose }) {
       <div className="px-5 pt-3 shrink-0" style={{ paddingBottom: "calc(24px + env(safe-area-inset-bottom))" }}>
         {!shot ? (
           <div className="flex items-center justify-between">
-            <button onClick={() => fileRef.current?.click()} className="p-3" aria-label="Upload"><Upload size={20} color={C.paper} /></button>
+            <span style={{ width: 46 }} />
             <button onClick={grab} className="active:scale-90 transition-transform" aria-label="Capture" style={{ width: 70, height: 70, borderRadius: 999, background: "#FFF", boxShadow: `0 0 0 4px rgba(255,255,255,0.35)` }} />
             <button onClick={() => setFacing((f) => (f === "user" ? "environment" : "user"))} className="p-3" aria-label="Flip camera"><SwitchCamera size={20} color={C.paper} /></button>
           </div>
@@ -1343,9 +1417,17 @@ function FeaturedScreen({ st, act }) {
   const nominated = st.nominatedId ? st.posts.find((p) => p.id === st.nominatedId) : null;
   return (
     <div className="pb-6">
-      <div className="px-4 pt-5 pb-1">
-        <div className="font-bold tracking-tight" style={{ fontSize: 22, color: C.ink }}>Featured</div>
-        <div className="text-xs mt-0.5" style={{ color: C.mute }}>Week of {FEATURED_WEEK.label} · Hand-picked by the ShowUp team every Sunday</div>
+      <div className="px-4 pt-4 pb-1">
+        <div className="relative overflow-hidden" style={{ borderRadius: 18, background: "linear-gradient(120deg, #F2B93B, #E8563F 55%, #7C5CD9)", boxShadow: "0 8px 20px -10px rgba(232,86,63,0.5)" }}>
+          <div className="flex items-center gap-3 px-4 py-4">
+            <div style={{ animation: "bob 2.4s ease-in-out infinite", filter: "drop-shadow(0 2px 3px rgba(23,19,14,0.4))" }}><Sprite grid={SPR.trophy} pal={{ y: "#FFF3C4" }} px={2.6} /></div>
+            <div className="flex-1">
+              <div className="text-lg font-bold text-white leading-tight" style={{ textShadow: "0 1px 3px rgba(23,19,14,0.35)" }}>The Wall of the Week</div>
+              <div className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.92)" }}>Six friends made it. Could've been you. 👀</div>
+            </div>
+            <PxTag color="rgba(23,19,14,0.35)" ink="#FFF">{FEATURED_WEEK.label}</PxTag>
+          </div>
+        </div>
       </div>
 
       {/* your one nomination per week */}
@@ -1380,9 +1462,9 @@ function FeaturedScreen({ st, act }) {
         return (
           <div key={cat.id} className="px-4 pt-4">
             <div className="relative overflow-hidden" style={px.card}>
-              <div className="flex items-center justify-between px-3.5 pt-3 pb-2">
+              <div className="flex items-center justify-between px-3.5 pt-2 pb-1.5">
                 <span className="text-sm font-bold" style={{ color: C.ink }}>{cat.emoji} {cat.title}</span>
-                <PxTag color="#FAF0D2" ink="#B8860B">🏅 Featured badge</PxTag>
+                <PixelBadge featuredCat={cat.title} tier={5} size={38} />
               </div>
               <button onClick={() => act.openPerson(post.author)} className="relative block w-full overflow-hidden active:opacity-90 transition-opacity" style={{ aspectRatio: "4 / 3" }}>
                 <PostPhoto post={post} />
@@ -1404,7 +1486,7 @@ function FeaturedScreen({ st, act }) {
           </div>
         );
       })}
-      <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>Winners earn a Featured badge for the trophy case. Categories rotate — most artsy, most beautiful, best vibe, and whatever the week deserves.</div>
+<div className="pt-2" />
     </div>
   );
 }
@@ -1488,7 +1570,7 @@ function ShopSheet({ st, act, onClose }) {
               <PxButton small kind="gold" onClick={() => act.buy("coins", pk)}>${pk.usd.toFixed(2)}</PxButton>
             </div>
           ))}
-          <div className="text-xs text-center pt-2 px-6 leading-relaxed" style={{ color: C.faint }}>Coins also come free: +10 for each day you show up, +15 with every badge.</div>
+
         </div>
       )}
       {tab !== "coins" && <div className="flex flex-col gap-3 px-4">
@@ -1528,7 +1610,7 @@ function ShopSheet({ st, act, onClose }) {
           );
         })}
       </div>}
-      {tab !== "coins" && <div className="text-xs text-center pt-5 px-8 leading-relaxed" style={{ color: C.faint }}>Cosmetics only — never pay-to-win. Showing up is free, forever.</div>}
+
       </div>
     </div>
   );
@@ -1616,7 +1698,7 @@ function BannerBlock({ user, pinBadges = [], editable, onEdit, tall }) {
         <div className="absolute top-2.5 left-2.5 flex gap-1.5">
           {pinBadges.slice(0, 3).map((b) => (
             <div key={b.id} style={{ filter: "drop-shadow(0 2px 4px rgba(23,19,14,0.45))" }}>
-              <PixelBadge activity={b.activity} tier={b.tier} size={34} />
+              <PixelBadge activity={b.activity} tier={b.tier} size={34} featuredCat={b.kind === "featured" ? b.cat : undefined} />
             </div>
           ))}
         </div>
@@ -1690,7 +1772,7 @@ function BannerEditor({ st, act, onClose }) {
             const on = pins.includes(b.id);
             return (
               <button key={b.id} onClick={() => act.togglePin(b.id)} className="relative active:scale-90 transition-transform" style={{ opacity: on || pins.length < 3 ? 1 : 0.4 }}>
-                <PixelBadge activity={b.activity} tier={b.tier} size={52} />
+                <PixelBadge activity={b.activity} tier={b.tier} size={52} featuredCat={b.kind === "featured" ? b.cat : undefined} />
                 {on && <span className="absolute -top-1 -right-1 rounded-full flex items-center justify-center" style={{ width: 18, height: 18, background: C.teal, border: `2px solid ${C.paper}` }}><Check size={10} color="#FFF" /></span>}
               </button>
             );
@@ -1715,7 +1797,11 @@ function ProfileScreen({ st, act }) {
       </div>
       <BannerBlock user={st.me} pinBadges={st.pinBadges} editable onEdit={act.openBannerEdit} />
       <div className="px-4 pt-3 grid grid-cols-3 gap-2">
-        {[{ v: st.me.weeks, l: "Weeks here" }, { v: st.me.daysWeek, l: "Days this week" }, { v: st.badges.length, l: "Badges earned" }].map((s) => (
+        <button onClick={act.openHistory} className="text-center py-2.5 active:scale-95 transition-transform" style={{ ...px.flat, borderColor: C.teal }}>
+          <div className="text-base font-bold tabular-nums" style={{ color: C.ink }}>{st.me.weeks}</div>
+          <div className="text-xs mt-0.5 font-semibold" style={{ color: C.teal }}>Weeks here ›</div>
+        </button>
+        {[{ v: st.me.daysWeek, l: "Days this week" }, { v: st.badges.length, l: "Badges earned" }].map((s) => (
           <div key={s.l} className="text-center py-2.5" style={px.flat}>
             <div className="text-base font-bold tabular-nums" style={{ color: C.ink }}>{s.v}</div>
             <div className="text-xs mt-0.5" style={{ color: C.faint }}>{s.l}</div>
@@ -1748,7 +1834,7 @@ function ProfileScreen({ st, act }) {
       <div className="px-4 grid grid-cols-4 gap-x-2 gap-y-3 justify-items-center">
         {trophies.map((b) => (
           <button key={b.id} onClick={() => act.spotlight(b)} className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
-            <PixelBadge activity={b.activity} tier={b.tier} size={58} />
+            <PixelBadge activity={b.activity} tier={b.tier} size={58} featuredCat={b.kind === "featured" ? b.cat : undefined} />
             <span className="text-xs font-bold text-center leading-tight" style={{ color: C.mute, fontSize: 9, maxWidth: 70 }}>{b.name}</span>
           </button>
         ))}
@@ -1839,20 +1925,14 @@ function CommentsSheet({ postId, st, core, onAdd, onClose }) {
                 <Shield size={13} color={g.verdict === "nudge" ? "#B8860B" : C.coral} />
                 <span className="text-xs font-bold" style={{ color: g.verdict === "nudge" ? "#8A6A0B" : C.coral }}>{g.message}</span>
               </div>
-              {g.swaps && (
-                <div className="flex flex-col gap-1.5 mt-2">
-                  {g.swaps.map((s) => (
-                    <button key={s} onClick={() => { onAdd(postId, s); setText(""); setG(null); }} className="text-left text-xs font-bold px-2.5 py-1.5 active:scale-95 transition-transform" style={{ ...px.chip, borderWidth: 1.5 }}>{s}</button>
-                  ))}
-                </div>
-              )}
+
             </div>
           )}
           <div className="flex gap-2">
             <PxInput value={text} onChange={(e) => { setText(e.target.value); setG(null); }} placeholder="Say something kind…" maxLength={120} onKeyDown={(e) => e.key === "Enter" && text.trim() && send(text.trim())} />
             <PxButton small onClick={() => text.trim() && send(text.trim())} ariaLabel="Send"><Send size={14} /></PxButton>
           </div>
-          <div className="flex items-center gap-1 pt-1.5"><ShieldCheck size={11} color={C.teal} /><span className="text-xs" style={{ color: C.faint }}>The Guardian keeps things kind here.</span></div>
+
         </div>
       </div>
     </div>
@@ -1896,7 +1976,7 @@ function NotifSheet({ st, act, onClose }) {
             </button>
           ))}
         </div>
-        <div className="text-xs text-center pt-6 px-10 leading-relaxed" style={{ color: C.faint }}>Celebrations are loud here. Quiet days are nobody's business.</div>
+
       </div>
     </div>
   );
@@ -1912,7 +1992,7 @@ function Spotlight({ badge, count, onClose }) {
       <div className="absolute inset-0" style={{ background: "rgba(32,24,15,0.6)", animation: "fadeIn 0.2s ease both" }} />
       <div className="relative flex flex-col items-center text-center p-6" style={{ ...px.card, boxShadow: SHADOW(5), animation: "spotIn 0.4s cubic-bezier(0.2,1.3,0.4,1) both", maxWidth: 300 }}>
         <div style={{ filter: locked ? "grayscale(1) opacity(0.55)" : "none", animation: locked ? "none" : "bob 2.4s ease-in-out infinite" }}>
-          <PixelBadge activity={badge.activity} tier={badge.tier} size={92} streak={badge.streak} />
+          <PixelBadge activity={badge.activity} tier={badge.tier} size={92} streak={badge.streak} featuredCat={badge.kind === "featured" ? badge.cat : undefined} />
         </div>
         <div className="font-bold tracking-tight mt-4" style={{ fontSize: 19, color: C.ink }}>{badge.name}</div>
         <div className="text-xs font-bold uppercase tracking-widest mt-1" style={{ color: C.faint }}>{featured ? `Featured · ${badge.cat}` : `${badge.activity || "Streak"} · Tier ${badge.tier} of 6`}</div>
@@ -2108,7 +2188,7 @@ function ProgressScreen({ st, act, onClose }) {
         <span style={{ width: 36 }} />
       </div>
       <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
-        <div className="px-4 py-2.5 text-xs" style={{ color: C.mute }}>All-time days — nothing here ever resets. Tap a sport to walk its road.</div>
+<div className="pt-1" />
         {rows.length === 0 && <div className="text-xs text-center py-8 px-10" style={{ color: C.faint }}>Post your first day and a journey appears here.</div>}
         {rows.map(([actName, days]) => {
           const ni = TIER_DAYS.findIndex((t) => t > days);
@@ -2177,7 +2257,7 @@ function ShareCard({ st, days, top, pairTop, pairFriend }) {
         </div>
         {st.pinBadges.length > 0 && (
           <div className="flex gap-1.5 pt-2.5">
-            {st.pinBadges.map((b) => <div key={b.id} style={{ filter: "drop-shadow(0 2px 4px rgba(23,19,14,0.55))" }}><PixelBadge activity={b.activity} tier={b.tier} size={36} /></div>)}
+            {st.pinBadges.map((b) => <div key={b.id} style={{ filter: "drop-shadow(0 2px 4px rgba(23,19,14,0.55))" }}><PixelBadge activity={b.activity} tier={b.tier} size={36} featuredCat={b.kind === "featured" ? b.cat : undefined} /></div>)}
           </div>
         )}
         <div className="flex-1" />
@@ -2226,7 +2306,7 @@ function WrappedSheet({ st, onClose, onShare }) {
           {st.me.companion && <div className="absolute" style={{ right: 26, bottom: 190, animation: "bob 2.4s ease-in-out infinite", filter: "drop-shadow(0 3px 5px rgba(23,19,14,0.6))" }}><Companion id={st.me.companion} px={4.5} /></div>}
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-8 text-center" style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom))" }}>
             {st.pinBadges.length > 0 && (
-              <div className="flex gap-2 mb-3">{st.pinBadges.map((b) => <div key={b.id} style={{ filter: "drop-shadow(0 3px 5px rgba(23,19,14,0.55))" }}><PixelBadge activity={b.activity} tier={b.tier} size={44} /></div>)}</div>
+              <div className="flex gap-2 mb-3">{st.pinBadges.map((b) => <div key={b.id} style={{ filter: "drop-shadow(0 3px 5px rgba(23,19,14,0.55))" }}><PixelBadge activity={b.activity} tier={b.tier} size={44} featuredCat={b.kind === "featured" ? b.cat : undefined} /></div>)}</div>
             )}
             <PxAvatar user={st.me} size={76} />
             <div className="text-2xl font-bold text-white mt-3 tracking-tight" style={{ textShadow: "0 2px 6px rgba(23,19,14,0.6)" }}>{st.me.name}'s June</div>
@@ -2264,7 +2344,7 @@ function WrappedSheet({ st, onClose, onShare }) {
             </div>
             <div className="w-full pt-4" style={{ maxWidth: 300 }}>
               <PxButton full style={{ background: "#FFF", color: C.ink }} onClick={onShare}><span className="inline-flex items-center gap-2"><Share2 size={14} /> Share your June</span></PxButton>
-              <div className="text-xs text-center mt-2.5" style={{ color: "rgba(255,255,255,0.75)" }}>This card is your banner — post it anywhere.</div>
+
             </div>
           </div>
         </div>
@@ -2333,20 +2413,16 @@ function SettingsSheet({ st, core, act, onClose }) {
             <Row label="Rest days"><span className="text-xs font-bold" style={{ color: C.mute }}>2 / week</span></Row>
           </div>
         </div>
-        <div className="px-4 pt-4">
-          <div className="p-3" style={px.flat}>
-            <div className="flex items-center gap-2"><ShieldCheck size={16} color={C.teal} /><span className="text-sm font-bold" style={{ color: C.ink }}>The Guardian</span></div>
-            <div className="text-xs mt-1.5 leading-relaxed" style={{ color: C.mute }}>
-              Five layers, zero AI needed: leet-speak normalization, a salted-hash blocklist (never stored as text), a harassment lexicon with kind rewrites, crisis-phrase protection, and a 3-strike cooldown. Slurs don't post here. Ever.
-            </div>
-            <div className="text-xs mt-1.5 font-bold" style={{ color: C.faint }}>Strikes: {core.guardian.strikes.count} · Blocklist: {core.db.blockHashes.size} hashed terms</div>
-          </div>
-        </div>
+
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="ghost" onClick={() => setDev((d) => !d)}><span className="inline-flex items-center gap-2"><Terminal size={14} /> Developer Mode {dev ? "▾" : "▸"}</span></PxButton>
           {dev && (
             <div className="flex flex-col gap-3 p-3" style={{ ...px.flat, background: C.night }}>
-              <div className="text-xs font-bold uppercase tracking-widest" style={{ color: "#5EDCA8" }}>▓ Outbox — simulated delivery</div>
+              <div className="text-xs font-bold uppercase tracking-widest" style={{ color: "#5EDCA8" }}>▓ Viewport diagnostics</div>
+              <div className="text-xs" style={{ color: "#B8C8B8" }}>
+                innerH {typeof window !== "undefined" ? window.innerHeight : 0} · vvH {typeof window !== "undefined" && window.visualViewport ? Math.round(window.visualViewport.height) : 0} · docH {typeof document !== "undefined" ? document.documentElement.clientHeight : 0} · rootH {typeof document !== "undefined" ? Math.round(document.querySelector(".app-root")?.getBoundingClientRect().height || 0) : 0} · screenH {typeof window !== "undefined" ? window.screen.height : 0}
+              </div>
+              <div className="text-xs font-bold uppercase tracking-widest pt-1" style={{ color: "#5EDCA8" }}>▓ Outbox — simulated delivery</div>
               <div className="flex flex-col gap-1.5" style={{ maxHeight: 150, overflowY: "auto" }}>
                 {core.db.outbox.length === 0 && <div className="text-xs" style={{ color: "#8A9A8A" }}>Nothing sent yet.</div>}
                 {[...core.db.outbox].reverse().map((m, i) => (
@@ -2386,7 +2462,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.5 · social polish · relentlessly kind</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp Launch Build v2.6 · relentlessly kind</div>
       </div>
     </div>
   );
@@ -2432,7 +2508,28 @@ function BottomNav({ tab, setTab, onCompose }) {
   );
 }
 
+function useViewportLock(rootRef) {
+  useEffect(() => {
+    const fix = () => {
+      const vv = window.visualViewport;
+      const h = Math.max(window.innerHeight || 0, vv ? vv.height : 0, document.documentElement.clientHeight || 0);
+      if (!h) return;
+      document.documentElement.style.setProperty("--app-height", h + "px");
+      if (rootRef.current) rootRef.current.style.setProperty("height", h + "px", "important");
+    };
+    fix();
+    const timers = [80, 300, 800, 2000].map((ms) => setTimeout(fix, ms));
+    window.addEventListener("resize", fix);
+    window.addEventListener("pageshow", fix);
+    document.addEventListener("visibilitychange", fix);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", fix);
+    return () => { timers.forEach(clearTimeout); window.removeEventListener("resize", fix); window.removeEventListener("pageshow", fix); document.removeEventListener("visibilitychange", fix); if (window.visualViewport) window.visualViewport.removeEventListener("resize", fix); };
+  }, []);
+}
+
 export default function App() {
+  const rootRef = useRef(null);
+  useViewportLock(rootRef);
   /* ── the core: one instance, survives rerenders ── */
   const coreRef = useRef(null);
   if (!coreRef.current) {
@@ -2495,6 +2592,8 @@ export default function App() {
   const [nominatedId, setNominatedId] = useState(null);
   const [nominatedCat, setNominatedCat] = useState(null);
   const [myFeatured, setMyFeatured] = useState([]);
+  const [history, setHistory] = useState({ 6: {}, 7: {} });
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [requests, setRequests] = useState(SEED_REQUESTS);
   const [sent, setSent] = useState([]);
   const [notifs, setNotifs] = useState([]);
@@ -2543,6 +2642,8 @@ export default function App() {
     setInventory(demo ? ["field-day", "summit-flag", "co-duck", "co-run"] : ["field-day"]);
     setWallet(demo ? 85 : 0);
     setMyFeatured(demo ? SEED_MY_FEATURED : []);
+    setHistory(demo ? buildDemoHistory() : { 6: {}, 7: {} });
+    setHistoryOpen(false);
     setNominatedId(null); setNominatedCat(null);
     setShopOpen(false); setNominateOpen(false); setBannerEditOpen(false); setWrappedOpen(false);
     setFriends(SEED_FRIENDS); setPosts(SEED_POSTS); setComments(SEED_COMMENTS); setPairs(SEED_PAIRS);
@@ -2569,7 +2670,7 @@ export default function App() {
 
   const st = {
     me, session, friends, posts, comments, pairs, progress, badges, people, inventory,
-    requests, sent, notifs, postedToday, nominatedId, nominatedCat, myFeatured, wallet, pinBadges,
+    requests, sent, notifs, postedToday, nominatedId, nominatedCat, myFeatured, wallet, pinBadges, history,
     suggested: SEED_SUGGESTED.filter((s) => !friends.some((f) => f.id === s.id)),
     notifDot: !notifSeen || requests.length > 0 || notifs.some((n) => n.badge),
     postSeed: posts.length,
@@ -2583,6 +2684,7 @@ export default function App() {
     openProgress: () => setProgressOpen(true),
     openJourney: (a) => setJourneyFor(a),
     openSettings: () => setSettingsOpen(true),
+    openHistory: () => setHistoryOpen(true),
     openShop: () => setShopOpen(true),
     openBannerEdit: () => setBannerEditOpen(true),
     openWrapped: () => setWrappedOpen(true),
@@ -2662,12 +2764,13 @@ export default function App() {
     },
     post: ({ activity, photo, caption, withIds }) => {
       const first = !postedToday;
-      const newPost = { id: `you-${Date.now()}`, author: "you", time: "now", place: "Right here", activity, caption, photo, likes: 0, liked: false, likedBy: null, reactions: {} };
+      const newPost = { id: `you-${Date.now()}`, author: "you", time: "Just now", place: "Right here", activity, caption, photo, likes: 0, liked: false, likedBy: null, reactions: {} };
       setPosts((ps) => [newPost, ...ps]);
       core.log("POST_CREATED", activity);
       setComposerOpen(false); setTab("feed");
       if (!first) { showToast("Posted! Today was already counted."); return; }
       setWallet((w) => w + 10); core.log("COINS", "+10 · showed up today");
+      setHistory((h) => ({ ...h, 7: { ...h[7], 1: { activity, photo } } }));
       setMe((m) => ({ ...m, daysWeek: Math.min(7, m.daysWeek + 1) }));
       /* pairwise ticks + shared milestones */
       const pplNow = Object.fromEntries(friends.map((f) => [f.id, f]));
@@ -2707,7 +2810,7 @@ export default function App() {
 
   /* ── shell ── */
   return (
-    <div className="app-root relative w-full flex justify-center overflow-hidden" style={{ height: "var(--app-height, 100vh)", background: C.paper }}>
+    <div ref={rootRef} className="app-root relative w-full flex justify-center overflow-hidden" style={{ height: "var(--app-height, 100vh)", background: C.paper }}>
       <style>{`
         @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
         @keyframes heartPop { 0% { transform: scale(0.4); opacity: 0; } 30% { transform: scale(1.15); opacity: 1; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
@@ -2736,6 +2839,7 @@ export default function App() {
             <BottomNav tab={tab} setTab={setTab} onCompose={() => setComposerOpen(true)} />
 
             {friendView && <FriendSheet person={friendView} pairs={pairs} onClose={() => setFriendView(null)} />}
+            {historyOpen && <HistorySheet st={st} onClose={() => setHistoryOpen(false)} />}
             {shopOpen && <ShopSheet st={st} act={act} onClose={() => setShopOpen(false)} />}
             {bannerEditOpen && <BannerEditor st={st} act={act} onClose={() => setBannerEditOpen(false)} />}
             {wrappedOpen && <WrappedSheet st={st} onClose={() => setWrappedOpen(false)} onShare={() => { core.log("WRAP_SHARED", "June share card"); setWrappedOpen(false); showToast("Share card saved — post it anywhere. ✨"); }} />}
