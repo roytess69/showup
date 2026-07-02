@@ -26,9 +26,15 @@
     <script>
       // iOS standalone caches a stale viewport height per home-screen icon;
       // measure the real one and let the app size itself from it.
-      const setH = () => document.documentElement.style.setProperty("--app-height", window.innerHeight + "px");
+      const setH = () => {
+        const h = Math.max(window.innerHeight || 0, (window.visualViewport && window.visualViewport.height) || 0);
+        if (h) document.documentElement.style.setProperty("--app-height", h + "px");
+      };
       setH();
+      [60, 300, 1000].forEach((ms) => setTimeout(setH, ms));
       window.addEventListener("resize", setH);
+      window.addEventListener("pageshow", setH);
+      if (window.visualViewport) window.visualViewport.addEventListener("resize", setH);
       window.addEventListener("orientationchange", () => setTimeout(setH, 250));
     </script>
     <script type="module" src="/src/main.jsx"></script>
