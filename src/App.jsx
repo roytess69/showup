@@ -28,7 +28,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import {
   Home, Users, Plus, User, Bell, X, Camera, ChevronLeft, ChevronRight,
   Check, Heart, MessageCircle, Send, Share2, Settings, Sparkles, Zap,
-  ShoppingBag, Shield, ShieldCheck, Eye, EyeOff, RefreshCw, AtSign,
+  ShoppingBag, Shield, ShieldCheck, Eye, EyeOff, RefreshCw, AtSign, CalendarDays, ThumbsUp, MapPin,
   SwitchCamera, Upload, Search, Lock, Flame, Trophy, TrendingUp,
   MoreHorizontal, ScrollText, LogOut, Terminal, Mail, Smartphone,
   UserPlus, Star, Gift, Wand2, CircleDot,
@@ -750,6 +750,138 @@ const buildDemoHistory = () => {
 const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const MONTH_META = { 6: { days: 30, firstDow: 1 }, 7: { days: 31, firstDow: 3 } }; // June 2026 starts Mon, July Wed
 
+function EventsSheet({ st, act, onClose }) {
+  const [view, setView] = useState("list"); // list | new | event id
+  const [fAct, setFAct] = useState(null);
+  const [fPlace, setFPlace] = useState("");
+  const [fWhen, setFWhen] = useState(null);
+  const [fCustom, setFCustom] = useState("");
+  const [fNote, setFNote] = useState("");
+  const now = Date.now();
+  const upcoming = st.events.filter((e) => e.at > now).sort((a, b) => a.at - b.at);
+  const P = (id) => (id === "you" ? { ...st.me, id: "you", name: "You" } : st.people[id]);
+  const QUICK = ["Basketball", "Soccer", "Running", "Golf", "Lifting", "Yoga", "Walking", "Swimming"];
+  const whenChips = () => {
+    const d = new Date(); const H = 3600e3;
+    const tonight = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 19, 0).getTime();
+    const tmrw = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 8, 0).getTime();
+    const sat = (() => { const x = new Date(d); x.setDate(x.getDate() + ((6 - x.getDay() + 7) % 7 || 7)); return new Date(x.getFullYear(), x.getMonth(), x.getDate(), 10, 0).getTime(); })();
+    return [["Tonight 7 PM", tonight > now ? tonight : tonight + 24 * H], ["Tomorrow 8 AM", tmrw], ["Saturday 10 AM", sat]];
+  };
+  const canCreate = fAct && fPlace.trim() && (fWhen || fCustom);
+  const submit = () => {
+    const at = fCustom ? new Date(fCustom).getTime() : fWhen;
+    if (!at || isNaN(at) || at < now) return;
+    act.createEvent({ activity: fAct, place: V.clean(fPlace).slice(0, 40), at, note: V.clean(fNote).slice(0, 80) });
+    setView("list"); setFAct(null); setFPlace(""); setFWhen(null); setFCustom(""); setFNote("");
+  };
+  const detail = typeof view === "string" && view.startsWith("e") && view !== "new" ? upcoming.find((e) => e.id === view) : null;
+
+  return (
+    <div className="fixed inset-0 flex flex-col" style={{ zIndex: 49, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(view === "list" ? onClose : () => setView("list"))}>
+      <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
+        <button onClick={view === "list" ? onClose : () => setView("list")} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
+        <div className="flex-1 text-center text-sm font-bold" style={{ color: C.ink }}>{view === "new" ? "New event" : detail ? detail.activity : "Events"}</div>
+        {view === "list" ? (
+          <button onClick={() => setView("new")} className="px-3 py-1.5 mr-1 text-xs font-bold rounded-full active:scale-95 transition-transform" style={{ background: C.teal, color: "#FFF" }}>+ New</button>
+        ) : <span style={{ width: 36 }} />}
+      </div>
+
+      {view === "list" && (
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-3 pb-10">
+          {upcoming.length === 0 && (
+            <div className="text-center pt-16 px-8">
+              <CalendarDays size={30} color={C.faint} className="mx-auto" />
+              <div className="text-sm font-bold mt-3" style={{ color: C.ink }}>Nothing planned yet</div>
+              <div className="text-xs mt-1" style={{ color: C.faint }}>Post one — your friends see it in their feed.</div>
+            </div>
+          )}
+          <div className="flex flex-col gap-2.5">
+            {upcoming.map((e) => {
+              const host = P(e.host); const going = e.going.includes("you");
+              return (
+                <button key={e.id} onClick={() => setView(e.id)} className="w-full text-left p-3 active:scale-[0.99] transition-transform" style={px.card}>
+                  <div className="flex items-center gap-2">
+                    <PxTag color={ACT_COLOR(e.activity)} ink="#FFF">{e.activity}</PxTag>
+                    <span className="text-xs font-bold" style={{ color: C.teal }}>{fmtWhen(e.at)}</span>
+                    <span className="flex-1" />
+                    <span onClick={(ev) => { ev.stopPropagation(); act.rsvp(e.id); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full active:scale-90 transition-transform" style={{ background: going ? C.teal : C.field }}>
+                      <ThumbsUp size={13} color={going ? "#FFF" : C.ink} fill={going ? "#FFF" : "none"} />
+                      <span className="text-xs font-bold tabular-nums" style={{ color: going ? "#FFF" : C.ink }}>{e.going.length}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 pt-2"><MapPin size={13} color={C.mute} /><span className="text-sm font-semibold" style={{ color: C.ink }}>{e.place}</span></div>
+                  <div className="flex items-center gap-1.5 pt-1.5">
+                    <PxAvatar user={host} size={20} />
+                    <span className="text-xs" style={{ color: C.faint }}>{e.host === "you" ? "You're hosting" : `${host?.name} is hosting`}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {detail && (
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-10">
+          <div className="p-4" style={px.card}>
+            <div className="flex items-center gap-2">
+              <PxTag color={ACT_COLOR(detail.activity)} ink="#FFF">{detail.activity}</PxTag>
+              {detail.host === "you" && <PxTag color={C.gold}>Your event</PxTag>}
+            </div>
+            <div className="text-xl font-bold pt-2.5" style={{ color: C.ink }}>{fmtWhen(detail.at)}</div>
+            <div className="flex items-center gap-1.5 pt-1.5"><MapPin size={14} color={C.mute} /><span className="text-sm font-semibold" style={{ color: C.ink }}>{detail.place}</span></div>
+            {detail.note && <div className="text-sm pt-2" style={{ color: C.mute }}>{detail.note}</div>}
+          </div>
+          <div className="text-xs font-bold uppercase tracking-widest pt-5 pb-2" style={{ color: C.faint }}>Going · {detail.going.length}</div>
+          <div className="flex flex-col">
+            {detail.going.map((g) => {
+              const p = P(g);
+              return p ? (
+                <div key={g} className="flex items-center gap-2.5 py-2" style={{ borderBottom: "1.5px solid rgba(32,24,15,0.08)" }}>
+                  <PxAvatar user={p} size={30} />
+                  <span className="text-sm font-semibold" style={{ color: C.ink }}>{p.name}</span>
+                  {g === detail.host && <span className="text-xs" style={{ color: C.faint }}>host</span>}
+                </div>
+              ) : null;
+            })}
+          </div>
+          <div className="pt-5">
+            <PxButton full kind={detail.going.includes("you") ? "ghost" : "primary"} onClick={() => act.rsvp(detail.id)}>
+              <span className="inline-flex items-center gap-2"><ThumbsUp size={14} /> {detail.going.includes("you") ? "You're going — tap to opt out" : "I'm in"}</span>
+            </PxButton>
+            {detail.going.includes("you") && <div className="text-xs text-center pt-2.5" style={{ color: C.faint }}>You'll get a reminder before it starts.</div>}
+          </div>
+        </div>
+      )}
+
+      {view === "new" && (
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-10">
+          <div className="text-xs font-bold uppercase tracking-widest pb-2" style={{ color: C.faint }}>What</div>
+          <div className="flex flex-wrap gap-2">
+            {QUICK.map((a) => (
+              <button key={a} onClick={() => setFAct(a)} className="px-3 py-2 text-sm font-bold active:scale-95 transition-transform" style={{ ...px.chip, background: fAct === a ? C.teal : C.field, color: fAct === a ? "#FFF" : C.ink }}>{a}</button>
+            ))}
+          </div>
+          <div className="text-xs font-bold uppercase tracking-widest pt-5 pb-2" style={{ color: C.faint }}>Where</div>
+          <PxInput value={fPlace} onChange={(e) => setFPlace(e.target.value)} placeholder="Court, park, gym, trail…" maxLength={40} right={<MapPin size={14} color={C.faint} />} />
+          <div className="text-xs font-bold uppercase tracking-widest pt-5 pb-2" style={{ color: C.faint }}>When</div>
+          <div className="flex flex-wrap gap-2">
+            {whenChips().map(([label, ts]) => (
+              <button key={label} onClick={() => { setFWhen(ts); setFCustom(""); }} className="px-3 py-2 text-sm font-bold active:scale-95 transition-transform" style={{ ...px.chip, background: fWhen === ts && !fCustom ? C.teal : C.field, color: fWhen === ts && !fCustom ? "#FFF" : C.ink }}>{label}</button>
+            ))}
+          </div>
+          <input type="datetime-local" value={fCustom} onChange={(e) => { setFCustom(e.target.value); setFWhen(null); }} className="w-full mt-2 outline-none" style={{ ...TYPE, background: C.card, border: `1.5px solid ${C.line}`, borderRadius: 14, padding: "12px 14px", fontSize: 16, color: fCustom ? C.ink : C.faint }} />
+          <div className="text-xs font-bold uppercase tracking-widest pt-5 pb-2" style={{ color: C.faint }}>Note <span style={{ textTransform: "none", letterSpacing: 0 }}>(optional)</span></div>
+          <PxInput value={fNote} onChange={(e) => setFNote(e.target.value)} placeholder="Skill level, what to bring…" maxLength={80} />
+          <div className="pt-6"><PxButton full disabled={!canCreate} onClick={submit}>Post event</PxButton></div>
+          <div className="text-xs text-center pt-2.5" style={{ color: C.faint }}>Friends near Boise see it in their feed. It disappears after it happens.</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HistorySheet({ st, onClose }) {
   const [month, setMonth] = useState(6);
   const [light, setLight] = useState(null);
@@ -802,6 +934,24 @@ function HistorySheet({ st, onClose }) {
     </div>
   );
 }
+
+/* ── EVENTS — plans to show up together; they expire on their own ── */
+const fmtWhen = (ts) => {
+  const d = new Date(ts), now = new Date();
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const day0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const dd = Math.floor((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - day0) / 86400000);
+  const label = dd === 0 ? "Today" : dd === 1 ? "Tomorrow" : d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+  return `${label} · ${time}`;
+};
+const buildSeedEvents = () => {
+  const now = Date.now(), H = 3600e3, D = 24 * H;
+  return [
+    { id: "e1", host: "jake", activity: "Basketball", place: "YMCA outdoor court", at: now + 3 * H, note: "5v5 if enough show — all levels welcome", going: ["jake", "dev"] },
+    { id: "e2", host: "sofia", activity: "Soccer", place: "Ann Morrison Park", at: now + 2 * D + 2 * H, note: "Five-a-side. Bring water.", going: ["sofia", "maya", "lena"] },
+    { id: "e3", host: "maya", activity: "Running", place: "Greenbelt trailhead", at: now + 4 * D + 8 * H, note: "Easy 5k, coffee after", going: ["maya"] },
+  ];
+};
 
 const SEED_MY_FEATURED = [
   { id: "fw24", kind: "featured", activity: "Featured", tier: 5, name: "Golden Hour — Wk 24", cat: "Most Beautiful" },
@@ -948,7 +1098,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v2.9.1 · camera fixed</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v3.0 · events</div>
       </div>
     </AuthShell>
   );
@@ -1314,6 +1464,28 @@ function MemoryCard({ post, onOpen }) {
   );
 }
 
+function EventFeedCard({ e, st, act }) {
+  const host = e.host === "you" ? { ...st.me, name: "You" } : st.people[e.host];
+  const going = e.going.includes("you");
+  return (
+    <div className="px-3 pt-3">
+      <button onClick={act.openEvents} className="w-full text-left p-3 active:scale-[0.99] transition-transform" style={{ ...px.card, borderColor: C.teal }}>
+        <div className="flex items-center gap-2">
+          <CalendarDays size={15} color={C.teal} />
+          <span className="text-sm font-semibold flex-1" style={{ color: C.ink }}>
+            <b>{e.host === "you" ? "You're" : `${host?.name} is`}</b> hosting {e.activity}
+          </span>
+          <span onClick={(ev) => { ev.stopPropagation(); act.rsvp(e.id); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full active:scale-90 transition-transform" style={{ background: going ? C.teal : C.field }}>
+            <ThumbsUp size={13} color={going ? "#FFF" : C.ink} fill={going ? "#FFF" : "none"} />
+            <span className="text-xs font-bold tabular-nums" style={{ color: going ? "#FFF" : C.ink }}>{e.going.length}</span>
+          </span>
+        </div>
+        <div className="text-xs pt-1.5 pl-6" style={{ color: C.mute }}>{e.place} · <b style={{ color: C.teal }}>{fmtWhen(e.at)}</b></div>
+      </button>
+    </div>
+  );
+}
+
 function FeedScreen({ st, act }) {
   const showedUp = useMemo(() => [...new Set(st.posts.filter((p) => !p.type && p.author !== "you").map((p) => p.author))].map((id) => st.people[id]).filter(Boolean), [st.posts, st.people]);
   const pairs = useMemo(() => Object.entries(st.pairs).filter(([id, n]) => n > 0 && st.people[id]).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, n]) => ({ id, n, ...st.people[id] })), [st.pairs, st.people]);
@@ -1355,6 +1527,7 @@ function FeedScreen({ st, act }) {
           ))}
         </div>
       )}
+      {(() => { const up = st.events.filter((e) => e.at > Date.now()).sort((a, b) => a.at - b.at); return up.length ? <EventFeedCard e={up[0]} st={st} act={act} /> : null; })()}
       {st.posts.map((post) => {
         if (post.type === "memory") return <MemoryCard key={post.id} post={post} onOpen={act.openMemory} />;
         const isYou = post.author === "you";
@@ -1667,6 +1840,20 @@ function FriendsScreen({ st, act }) {
       <div className="px-4 pt-5 pb-3">
         <div className="font-bold tracking-tight" style={{ fontSize: 22, color: C.ink }}>Friends</div>
         <div className="text-xs mt-0.5" style={{ color: C.mute }}>{st.friends.length} people show up with you.</div>
+      </div>
+      <div className="px-4 pb-3">
+        <button onClick={act.openEvents} className="w-full relative overflow-hidden text-left active:scale-[0.98] transition-transform" style={{ borderRadius: 16, background: `linear-gradient(120deg, ${C.teal}, #2A5A96)`, boxShadow: "0 6px 16px -8px rgba(30,158,134,0.55)" }}>
+          <div className="flex items-center gap-3 px-4 py-3.5">
+            <CalendarDays size={20} color="#FFF" />
+            <div className="flex-1">
+              <div className="text-sm font-bold text-white">Events</div>
+              <div className="text-xs" style={{ color: "rgba(255,255,255,0.88)" }}>
+                {(() => { const up = st.events.filter((e) => e.at > Date.now()); return up.length ? `${up.length} coming up — next: ${up.sort((a, b) => a.at - b.at)[0].activity} ${fmtWhen(up[0].at)}` : "Plan something — friends opt in with a tap"; })()}
+              </div>
+            </div>
+            <ChevronRight size={16} color="rgba(255,255,255,0.9)" />
+          </div>
+        </button>
       </div>
       {st.requests.length > 0 && (
         <div className="px-4 pb-2">
@@ -2060,7 +2247,7 @@ function NotifSheet({ st, act, onClose }) {
           {st.notifs.map((n) => (
             <button key={n.id} onClick={n.badge ? () => { act.spotlight(n.badge); onClose(); } : undefined} className="w-full flex items-center gap-2.5 py-2.5 text-left" style={{ borderBottom: "1.5px solid rgba(32,24,15,0.12)" }}>
               <div className="shrink-0 flex items-center justify-center" style={{ width: 36, height: 36, background: n.badge ? "#FAF0D2" : C.field, borderRadius: 12 }}>
-                {n.badge ? <Trophy size={15} color={C.ink} /> : n.kind === "likes" ? <Heart size={15} color={C.coral} fill={C.coral} /> : <UserPlus size={15} color={C.ink} />}
+                {n.badge ? <Trophy size={15} color={C.ink} /> : n.kind === "event" ? <CalendarDays size={15} color={C.teal} /> : n.kind === "likes" ? <Heart size={15} color={C.coral} fill={C.coral} /> : <UserPlus size={15} color={C.ink} />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm leading-snug" style={{ color: C.ink }}>{n.text}</div>
@@ -2556,7 +2743,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp v2.9</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp v3.0</div>
       </div>
     </div>
   );
@@ -2655,6 +2842,24 @@ class CrashGuard extends React.Component {
 function AppInner() {
   const rootRef = useRef(null);
   useViewportLock(rootRef, () => showToast("iOS cached an old screen size — remove the icon and re-add it once."));
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setTick((t) => t + 1);
+      const now = Date.now();
+      setEvents((evs) => {
+        evs.forEach((e) => {
+          if (e.going.includes("you") && e.at > now && e.at - now < 60 * 60e3 && !remindedRef.current.has(e.id)) {
+            remindedRef.current.add(e.id);
+            setNotifs((ns) => [{ id: "ev-" + e.id, kind: "event", text: `Starting soon — ${e.activity} at ${e.place}`, sub: fmtWhen(e.at) }, ...ns]);
+            setNotifSeen(false);
+            showToast(`${e.activity} starts soon — ${e.place}`);
+          }
+        });
+        return evs;
+      });
+    }, 30000);
+    return () => clearInterval(iv);
+  }, []);
   /* ── the core: one instance, survives rerenders ── */
   const coreRef = useRef(null);
   if (!coreRef.current) {
@@ -2721,6 +2926,10 @@ function AppInner() {
   const [history, setHistory] = useState({ 6: {}, 7: {} });
   const [historyOpen, setHistoryOpen] = useState(false);
   const [memoryView, setMemoryView] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [eventsOpen, setEventsOpen] = useState(false);
+  const [tick, setTick] = useState(0);
+  const remindedRef = useRef(new Set());
   const [requests, setRequests] = useState(SEED_REQUESTS);
   const [sent, setSent] = useState([]);
   const [notifs, setNotifs] = useState([]);
@@ -2771,6 +2980,8 @@ function AppInner() {
     setMyFeatured(demo ? SEED_MY_FEATURED : []);
     setHistory(demo ? buildDemoHistory() : { 6: {}, 7: {} });
     setHistoryOpen(false);
+    setEvents(demo ? buildSeedEvents() : []);
+    setEventsOpen(false); remindedRef.current = new Set();
     setNominatedId(null); setNominatedCat(null);
     setShopOpen(false); setNominateOpen(false); setBannerEditOpen(false); setWrappedOpen(false);
     setFriends(SEED_FRIENDS); setPosts(SEED_POSTS); setComments(SEED_COMMENTS); setPairs(SEED_PAIRS);
@@ -2797,7 +3008,7 @@ function AppInner() {
 
   const st = {
     me, session, friends, posts, comments, pairs, progress, badges, people, inventory,
-    requests, sent, notifs, postedToday, nominatedId, nominatedCat, myFeatured, wallet, pinBadges, history,
+    requests, sent, notifs, postedToday, nominatedId, nominatedCat, myFeatured, wallet, pinBadges, history, events, tick,
     suggested: SEED_SUGGESTED.filter((s) => !friends.some((f) => f.id === s.id)),
     notifDot: !notifSeen || requests.length > 0 || notifs.some((n) => n.badge),
     postSeed: posts.length,
@@ -2813,6 +3024,22 @@ function AppInner() {
     openSettings: () => setSettingsOpen(true),
     openHistory: () => setHistoryOpen(true),
     openMemory: (post) => { setMemoryView(post); core.log("MEMORY_VIEW", post.id); },
+    openEvents: () => setEventsOpen(true),
+    rsvp: (id) => {
+      setEvents((evs) => evs.map((e) => {
+        if (e.id !== id) return e;
+        const going = e.going.includes("you") ? e.going.filter((g) => g !== "you") : [...e.going, "you"];
+        if (!e.going.includes("you")) { showToast(`You're in. Reminder set for ${fmtWhen(e.at)}.`); core.log("EVENT_RSVP", e.id); }
+        else { showToast("Opted out."); remindedRef.current.delete(e.id); }
+        return { ...e, going };
+      }));
+    },
+    createEvent: (data) => {
+      const ev = { id: "e" + Date.now(), host: "you", going: ["you"], ...data };
+      setEvents((evs) => [...evs, ev]);
+      core.log("EVENT_CREATE", `${data.activity} · ${data.place}`);
+      showToast("Event posted — your friends can see it.");
+    },
     openShop: () => setShopOpen(true),
     openBannerEdit: () => setBannerEditOpen(true),
     openWrapped: () => setWrappedOpen(true),
@@ -2970,6 +3197,7 @@ function AppInner() {
 
             {friendView && <FriendSheet person={friendView} pairs={pairs} onClose={() => setFriendView(null)} />}
             {historyOpen && <HistorySheet st={st} onClose={() => setHistoryOpen(false)} />}
+            {eventsOpen && <EventsSheet st={st} act={act} onClose={() => setEventsOpen(false)} />}
             {memoryView && <MemoryStory post={memoryView} onClose={() => setMemoryView(null)} />}
             {shopOpen && <ShopSheet st={st} act={act} onClose={() => setShopOpen(false)} />}
             {bannerEditOpen && <BannerEditor st={st} act={act} onClose={() => setBannerEditOpen(false)} />}
