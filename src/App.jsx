@@ -752,6 +752,7 @@ const MONTH_META = { 6: { days: 30, firstDow: 1 }, 7: { days: 31, firstDow: 3 } 
 
 function EventsSheet({ st, act, initialView, onClose }) {
   const [view, setView] = useState(initialView || "list"); // list | new | event id
+  const direct = !!(initialView && initialView !== "list"); // opened straight into one event
   const [fAct, setFAct] = useState(null);
   const [fPlace, setFPlace] = useState("");
   const [fWhen, setFWhen] = useState(null);
@@ -779,9 +780,9 @@ function EventsSheet({ st, act, initialView, onClose }) {
   const detail = typeof view === "string" && view.startsWith("e") && view !== "new" ? upcoming.find((e) => e.id === view) : null;
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ zIndex: 49, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(view === "list" ? onClose : () => setView("list"))}>
+    <div className="fixed inset-0 flex flex-col" style={{ zIndex: 56, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(direct || view === "list" ? onClose : () => setView("list"))}>
       <div className="flex items-center h-12 px-2 shrink-0" style={{ borderBottom: BORDER }}>
-        <button onClick={view === "list" ? onClose : () => setView("list")} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
+        <button onClick={direct || view === "list" ? onClose : () => setView("list")} className="p-2 active:scale-90 transition-transform"><ChevronLeft size={20} color={C.ink} /></button>
         <div className="flex-1 text-center text-sm font-bold" style={{ color: C.ink }}>{view === "new" ? "New event" : detail ? detail.activity : "Events"}</div>
         {view === "list" ? (
           <button onClick={() => setView("new")} className="px-3 py-1.5 mr-1 text-xs font-bold rounded-full active:scale-95 transition-transform" style={{ background: C.teal, color: "#FFF" }}>+ New</button>
@@ -806,10 +807,7 @@ function EventsSheet({ st, act, initialView, onClose }) {
                     <PxTag color={ACT_COLOR(e.activity)} ink="#FFF">{e.activity}</PxTag>
                     <span className="text-xs font-bold" style={{ color: C.teal }}>{fmtWhen(e.at)}</span>
                     <span className="flex-1" />
-                    <span onClick={(ev) => { ev.stopPropagation(); act.rsvp(e.id); }} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full active:scale-90 transition-transform" style={{ background: going ? C.teal : C.field }}>
-                      <ThumbsUp size={13} color={going ? "#FFF" : C.ink} fill={going ? "#FFF" : "none"} />
-                      <span className="text-xs font-bold tabular-nums" style={{ color: going ? "#FFF" : C.ink }}>{e.going.length}</span>
-                    </span>
+                    {going ? <PxTag color={C.teal} ink="#FFF">Going</PxTag> : <span className="text-xs font-semibold" style={{ color: C.faint }}>{e.going.length} going</span>}
                   </div>
                   <div className="flex items-center gap-1.5 pt-2"><MapPin size={13} color={C.mute} /><span className="text-sm font-semibold" style={{ color: C.ink }}>{e.place}</span></div>
                   <div className="flex items-center gap-1.5 pt-1.5">
@@ -955,7 +953,7 @@ const buildSeedEvents = () => {
     { id: "e2", host: "sofia", activity: "Soccer", place: "Ann Morrison Park", at: now + 2 * D + 2 * H, note: "Five-a-side. Bring water.", going: ["sofia", "maya", "lena", CM("Marcus V.", 2, "#7C5CD9")] },
     { id: "e3", host: CM("Nina S.", 1, "#3E8A78"), activity: "Yoga", place: "Julia Davis Park lawn", at: now + 3 * D + 9 * H, note: "Bring a mat, all levels", going: [CM("Nina S.", 1, "#3E8A78")] },
     { id: "e4", host: "maya", activity: "Running", place: "Greenbelt trailhead", at: now + 4 * D + 8 * H, note: "Easy 5k, coffee after", going: ["maya"] },
-    { id: "e5", host: "you", activity: "Golf", place: "Warm Springs, 9 holes", at: now + 1 * D + 10 * H, note: "Walking pace, relaxed round", going: ["you", "lena", "dev"] },
+    { id: "e5", host: "you", activity: "Golf", place: "Warm Springs, 9 holes", at: now + 1 * D + 10 * H, note: "Walking pace, relaxed round", going: ["you", "lena", "dev"], feedAnchor: "p3" },
   ];
 };
 const evPerson = (g, me, people) => (typeof g === "object" ? g : g === "you" ? { ...me, name: "You" } : people[g]);
@@ -1106,7 +1104,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v3.2 · event activity</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v3.3 · event flow</div>
       </div>
     </AuthShell>
   );
@@ -1475,16 +1473,13 @@ function MemoryCard({ post, onOpen }) {
 function EventFeedCard({ e, st, act }) {
   return (
     <div className="px-3 pt-3">
-      <button onClick={act.openEvents} className="w-full text-left p-3 active:scale-[0.99] transition-transform" style={{ ...px.card, borderColor: C.teal }}>
+      <button onClick={() => act.openEventDetail(e.id)} className="w-full text-left p-3 active:scale-[0.99] transition-transform" style={{ ...px.card, borderColor: C.teal }}>
         <div className="flex items-center gap-2">
           <CalendarDays size={15} color={C.teal} />
           <span className="text-sm font-semibold flex-1" style={{ color: C.ink }}>
             <b>{e.host === "you" ? "You're hosting" : "You're going"}</b> — {e.activity}
           </span>
-          <span className="flex items-center gap-1 px-2.5 py-1.5 rounded-full" style={{ background: C.teal }}>
-            <ThumbsUp size={13} color="#FFF" fill="#FFF" />
-            <span className="text-xs font-bold tabular-nums" style={{ color: "#FFF" }}>{e.going.length}</span>
-          </span>
+          <span className="text-xs font-semibold" style={{ color: C.faint }}>{e.going.length} going</span>
         </div>
         <div className="text-xs pt-1.5 pl-6" style={{ color: C.mute }}>{e.place} · <b style={{ color: C.teal }}>{fmtWhen(e.at)}</b></div>
       </button>
@@ -1533,14 +1528,20 @@ function FeedScreen({ st, act }) {
           ))}
         </div>
       )}
-      {(() => { const up = st.events.filter((e) => e.at > Date.now() && e.going.some((g) => g === "you")).sort((a, b) => a.at - b.at); return up.length ? <EventFeedCard e={up[0]} st={st} act={act} /> : null; })()}
+
       {st.posts.map((post) => {
         if (post.type === "memory") return <MemoryCard key={post.id} post={post} onOpen={act.openMemory} />;
         const isYou = post.author === "you";
+        const anchoredEvents = (st.events || []).filter((e) => e.at > Date.now() && e.going.some((g) => g === "you") && e.feedAnchor === post.id);
         const person = isYou ? st.me : st.people[post.author];
         if (!person) return null;
         if (post.type === "milestone") return <MilestoneCard key={post.id} post={post} isYou={isYou} onOpenPerson={act.openPerson} onHype={act.hype} />;
-        return <PostCard key={post.id} post={post} person={person} isYou={isYou} people={st.people} comments={st.comments} onLike={act.like} onReact={act.react} onComment={act.openComments} onOpenPerson={act.openPerson} onMenu={act.postMenu} />;
+        return (
+          <React.Fragment key={post.id}>
+            {anchoredEvents.map((e) => <EventFeedCard key={e.id} e={e} st={st} act={act} />)}
+            <PostCard post={post} person={person} isYou={isYou} people={st.people} comments={st.comments} onLike={act.like} onReact={act.react} onComment={act.openComments} onOpenPerson={act.openPerson} onMenu={act.postMenu} />
+          </React.Fragment>
+        );
       })}
       <div className="text-center text-xs py-6" style={{ color: C.faint }}>You're all caught up</div>
     </div>
@@ -2248,7 +2249,7 @@ function NotifSheet({ st, act, onClose }) {
                     <div className="flex items-center gap-2">
                       <CalendarDays size={14} color={C.teal} />
                       <span className="text-sm font-bold flex-1" style={{ color: C.ink }}>{e.activity}</span>
-                      {e.host === "you" && <PxTag color={C.gold}>Hosting</PxTag>}
+                      {e.host === "you" ? <PxTag color={C.gold}>Hosting</PxTag> : <PxTag color="#D8F4EA" ink="#1E9E86">Going</PxTag>}
                       <span className="text-xs font-bold" style={{ color: C.teal }}>{fmtWhen(e.at)}</span>
                     </div>
                     <div className="flex items-center gap-2 pt-1.5 pl-6">
@@ -2781,7 +2782,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp v3.2</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp v3.3</div>
       </div>
     </div>
   );
@@ -3067,19 +3068,20 @@ function AppInner() {
     openHistory: () => setHistoryOpen(true),
     openMemory: (post) => { setMemoryView(post); core.log("MEMORY_VIEW", post.id); },
     openEvents: () => { setEventsView("list"); setEventsOpen(true); },
-    openEventDetail: (id) => { setEventsView(id); setNotifOpen(false); setEventsOpen(true); },
+    openEventDetail: (id) => { setEventsView(id); setEventsOpen(true); },
     rsvp: (id) => {
       setEvents((evs) => evs.map((e) => {
         if (e.id !== id) return e;
         const isIn = e.going.some((g) => g === "you");
         const going = isIn ? e.going.filter((g) => g !== "you") : [...e.going, "you"];
+        const feedAnchor = isIn ? undefined : (posts.find((p) => !p.type) || posts[0])?.id;
         if (!isIn) { showToast(`You're in. Reminder set for ${fmtWhen(e.at)}.`); core.log("EVENT_RSVP", e.id); }
         else { showToast("Opted out."); remindedRef.current.delete(e.id); }
-        return { ...e, going };
+        return { ...e, going, feedAnchor: feedAnchor ?? e.feedAnchor };
       }));
     },
     createEvent: (data) => {
-      const ev = { id: "e" + Date.now(), host: "you", going: ["you"], ...data };
+      const ev = { id: "e" + Date.now(), host: "you", going: ["you"], feedAnchor: (posts.find((p) => !p.type) || posts[0])?.id, ...data };
       setEvents((evs) => [...evs, ev]);
       core.log("EVENT_CREATE", `${data.activity} · ${data.place}`);
       showToast("Event posted to everyone nearby.");
