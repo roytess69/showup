@@ -750,8 +750,8 @@ const buildDemoHistory = () => {
 const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const MONTH_META = { 6: { days: 30, firstDow: 1 }, 7: { days: 31, firstDow: 3 } }; // June 2026 starts Mon, July Wed
 
-function EventsSheet({ st, act, onClose }) {
-  const [view, setView] = useState("list"); // list | new | event id
+function EventsSheet({ st, act, initialView, onClose }) {
+  const [view, setView] = useState(initialView || "list"); // list | new | event id
   const [fAct, setFAct] = useState(null);
   const [fPlace, setFPlace] = useState("");
   const [fWhen, setFWhen] = useState(null);
@@ -955,6 +955,7 @@ const buildSeedEvents = () => {
     { id: "e2", host: "sofia", activity: "Soccer", place: "Ann Morrison Park", at: now + 2 * D + 2 * H, note: "Five-a-side. Bring water.", going: ["sofia", "maya", "lena", CM("Marcus V.", 2, "#7C5CD9")] },
     { id: "e3", host: CM("Nina S.", 1, "#3E8A78"), activity: "Yoga", place: "Julia Davis Park lawn", at: now + 3 * D + 9 * H, note: "Bring a mat, all levels", going: [CM("Nina S.", 1, "#3E8A78")] },
     { id: "e4", host: "maya", activity: "Running", place: "Greenbelt trailhead", at: now + 4 * D + 8 * H, note: "Easy 5k, coffee after", going: ["maya"] },
+    { id: "e5", host: "you", activity: "Golf", place: "Warm Springs, 9 holes", at: now + 1 * D + 10 * H, note: "Walking pace, relaxed round", going: ["you", "lena", "dev"] },
   ];
 };
 const evPerson = (g, me, people) => (typeof g === "object" ? g : g === "you" ? { ...me, name: "You" } : people[g]);
@@ -1105,7 +1106,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v3.1 · area events</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v3.2 · event activity</div>
       </div>
     </AuthShell>
   );
@@ -2235,6 +2236,38 @@ function NotifSheet({ st, act, onClose }) {
         <span style={{ width: 36 }} />
       </div>
       <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
+        {(() => {
+          const mine = st.events.filter((e) => e.at > Date.now() && (e.host === "you" || e.going.some((g) => g === "you"))).sort((a, b) => a.at - b.at);
+          if (!mine.length) return null;
+          return (
+            <div className="px-4 pt-3">
+              <div className="text-xs font-bold uppercase tracking-widest pb-1.5" style={{ color: C.faint }}>Your events</div>
+              <div className="flex flex-col gap-2">
+                {mine.map((e) => (
+                  <button key={e.id} onClick={() => act.openEventDetail(e.id)} className="w-full text-left p-3 active:scale-[0.99] transition-transform" style={{ ...px.flat, borderColor: e.host === "you" ? C.teal : undefined }}>
+                    <div className="flex items-center gap-2">
+                      <CalendarDays size={14} color={C.teal} />
+                      <span className="text-sm font-bold flex-1" style={{ color: C.ink }}>{e.activity}</span>
+                      {e.host === "you" && <PxTag color={C.gold}>Hosting</PxTag>}
+                      <span className="text-xs font-bold" style={{ color: C.teal }}>{fmtWhen(e.at)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1.5 pl-6">
+                      <div className="flex">
+                        {e.going.slice(0, 4).map((g, i) => {
+                          const p = evPerson(g, st.me, st.people);
+                          return p ? <div key={i} style={{ marginLeft: i ? -7 : 0, zIndex: 4 - i }}><PxAvatar user={p} size={20} /></div> : null;
+                        })}
+                      </div>
+                      <span className="text-xs" style={{ color: C.faint }}>{e.going.length} going · {e.place}</span>
+                      <span className="flex-1" />
+                      <ChevronRight size={14} color={C.faint} />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         {st.requests.length > 0 && (
           <div className="px-4 pt-3">
             <div className="text-xs font-bold uppercase tracking-widest pb-1" style={{ color: C.faint }}>Requests</div>
@@ -2250,7 +2283,7 @@ function NotifSheet({ st, act, onClose }) {
         )}
         <div className="px-4 pt-3">
           {st.notifs.map((n) => (
-            <button key={n.id} onClick={n.badge ? () => { act.spotlight(n.badge); onClose(); } : undefined} className="w-full flex items-center gap-2.5 py-2.5 text-left" style={{ borderBottom: "1.5px solid rgba(32,24,15,0.12)" }}>
+            <button key={n.id} onClick={n.badge ? () => { act.spotlight(n.badge); onClose(); } : n.eventId ? () => act.openEventDetail(n.eventId) : undefined} className="w-full flex items-center gap-2.5 py-2.5 text-left" style={{ borderBottom: "1.5px solid rgba(32,24,15,0.12)" }}>
               <div className="shrink-0 flex items-center justify-center" style={{ width: 36, height: 36, background: n.badge ? "#FAF0D2" : C.field, borderRadius: 12 }}>
                 {n.badge ? <Trophy size={15} color={C.ink} /> : n.kind === "event" ? <CalendarDays size={15} color={C.teal} /> : n.kind === "likes" ? <Heart size={15} color={C.coral} fill={C.coral} /> : <UserPlus size={15} color={C.ink} />}
               </div>
@@ -2748,7 +2781,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp v3.1</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp v3.2</div>
       </div>
     </div>
   );
@@ -2933,6 +2966,8 @@ function AppInner() {
   const [memoryView, setMemoryView] = useState(null);
   const [events, setEvents] = useState([]);
   const [eventsOpen, setEventsOpen] = useState(false);
+  const [eventsView, setEventsView] = useState("list");
+  const joinTimersRef = useRef([]);
   const [tick, setTick] = useState(0);
   const remindedRef = useRef(new Set());
   const [requests, setRequests] = useState(SEED_REQUESTS);
@@ -2986,7 +3021,8 @@ function AppInner() {
     setHistory(demo ? buildDemoHistory() : { 6: {}, 7: {} });
     setHistoryOpen(false);
     setEvents(demo ? buildSeedEvents() : []);
-    setEventsOpen(false); remindedRef.current = new Set();
+    setEventsOpen(false); setEventsView("list"); remindedRef.current = new Set();
+    joinTimersRef.current.forEach(clearTimeout); joinTimersRef.current = [];
     setNominatedId(null); setNominatedCat(null);
     setShopOpen(false); setNominateOpen(false); setBannerEditOpen(false); setWrappedOpen(false);
     setFriends(SEED_FRIENDS); setPosts(SEED_POSTS); setComments(SEED_COMMENTS); setPairs(SEED_PAIRS);
@@ -2995,6 +3031,7 @@ function AppInner() {
       ? [
           { id: "n1", kind: "likes", text: "Maya and 12 others liked your post", sub: "2h" },
           { id: "n2", badge: { activity: "Running", tier: 2, name: "Just Jogging" }, text: "New badge earned — Just Jogging", sub: "Tap to admire" },
+          { id: "evjoin-e5", kind: "event", eventId: "e5", text: "Lena + 1 other joined your Golf", sub: "1h" },
           { id: "n3", kind: "follow", text: "Sofia started showing up with you", sub: "3d" },
         ]
       : [{ id: "n0", kind: "follow", text: "Welcome to ShowUp — invite your first friend 🎉", sub: "now" }]);
@@ -3029,7 +3066,8 @@ function AppInner() {
     openSettings: () => setSettingsOpen(true),
     openHistory: () => setHistoryOpen(true),
     openMemory: (post) => { setMemoryView(post); core.log("MEMORY_VIEW", post.id); },
-    openEvents: () => setEventsOpen(true),
+    openEvents: () => { setEventsView("list"); setEventsOpen(true); },
+    openEventDetail: (id) => { setEventsView(id); setNotifOpen(false); setEventsOpen(true); },
     rsvp: (id) => {
       setEvents((evs) => evs.map((e) => {
         if (e.id !== id) return e;
@@ -3044,7 +3082,25 @@ function AppInner() {
       const ev = { id: "e" + Date.now(), host: "you", going: ["you"], ...data };
       setEvents((evs) => [...evs, ev]);
       core.log("EVENT_CREATE", `${data.activity} · ${data.place}`);
-      showToast("Event posted — your friends can see it.");
+      showToast("Event posted to everyone nearby.");
+      // people discover it and opt in over the next couple of minutes
+      const joiners = [...SEED_FRIENDS].sort(() => Math.random() - 0.5).slice(0, 3);
+      [20000, 48000, 85000].forEach((ms, i) => {
+        if (!joiners[i]) return;
+        joinTimersRef.current.push(setTimeout(() => {
+          const f = joiners[i];
+          setEvents((evs) => evs.map((e) => (e.id === ev.id && !e.going.includes(f.id) ? { ...e, going: [...e.going, f.id] } : e)));
+          setNotifs((ns) => {
+            const others = i; // joiners before this one
+            const text = others === 0 ? `${f.name} joined your ${ev.activity}` : `${f.name} + ${others} other${others > 1 ? "s" : ""} joined your ${ev.activity}`;
+            const rest = ns.filter((n) => n.id !== "evjoin-" + ev.id);
+            return [{ id: "evjoin-" + ev.id, kind: "event", eventId: ev.id, text, sub: "just now" }, ...rest];
+          });
+          setNotifSeen(false);
+          if (i === 0) showToast(`${f.name} joined your ${ev.activity} 👍`);
+          core.log("EVENT_JOIN", `${f.id} → ${ev.id}`);
+        }, ms));
+      });
     },
     openShop: () => setShopOpen(true),
     openBannerEdit: () => setBannerEditOpen(true),
@@ -3203,7 +3259,7 @@ function AppInner() {
 
             {friendView && <FriendSheet person={friendView} pairs={pairs} onClose={() => setFriendView(null)} />}
             {historyOpen && <HistorySheet st={st} onClose={() => setHistoryOpen(false)} />}
-            {eventsOpen && <EventsSheet st={st} act={act} onClose={() => setEventsOpen(false)} />}
+            {eventsOpen && <EventsSheet st={st} act={act} initialView={eventsView} onClose={() => { setEventsOpen(false); setEventsView("list"); }} />}
             {memoryView && <MemoryStory post={memoryView} onClose={() => setMemoryView(null)} />}
             {shopOpen && <ShopSheet st={st} act={act} onClose={() => setShopOpen(false)} />}
             {bannerEditOpen && <BannerEditor st={st} act={act} onClose={() => setBannerEditOpen(false)} />}
