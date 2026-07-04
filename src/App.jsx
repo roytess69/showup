@@ -749,6 +749,7 @@ const buildDemoHistory = () => {
 };
 const MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const MONTH_META = { 6: { days: 30, firstDow: 1 }, 7: { days: 31, firstDow: 3 } }; // June 2026 starts Mon, July Wed
+const monthMeta = (m) => MONTH_META[m] || { days: 31, firstDow: 0 };
 
 function EventsSheet({ st, act, initialView, onClose }) {
   const [view, setView] = useState(initialView || "list"); // list | new | event id
@@ -776,7 +777,6 @@ function EventsSheet({ st, act, initialView, onClose }) {
     act.createEvent({ activity: fAct, place: V.clean(fPlace).slice(0, 40), at, note: V.clean(fNote).slice(0, 80) });
     setView("list"); setFAct(null); setFPlace(""); setFWhen(null); setFCustom(""); setFNote("");
   };
-  const going = (e) => evGoing(e);
   const detail = typeof view === "string" && view.startsWith("e") && view !== "new" ? upcoming.find((e) => e.id === view) : null;
 
   return (
@@ -848,10 +848,14 @@ function EventsSheet({ st, act, initialView, onClose }) {
             })}
           </div>
           <div className="pt-5">
-            <PxButton full kind={evGoing(detail) ? "ghost" : "primary"} onClick={() => act.rsvp(detail.id)}>
-              <span className="inline-flex items-center gap-2"><ThumbsUp size={14} /> {evGoing(detail) ? "You're going — tap to opt out" : "I'm in"}</span>
-            </PxButton>
-            {evGoing(detail) && <div className="text-xs text-center pt-2.5" style={{ color: C.faint }}>You'll get a reminder before it starts.</div>}
+            {detail.host === "you" ? (
+              <PxButton full kind="ghost" onClick={() => { act.cancelEvent(detail.id); direct ? onClose() : setView("list"); }} style={{ color: C.coral, borderColor: C.coral }}>Cancel event</PxButton>
+            ) : (
+              <PxButton full kind={evGoing(detail) ? "ghost" : "primary"} onClick={() => act.rsvp(detail.id)}>
+                <span className="inline-flex items-center gap-2"><ThumbsUp size={14} /> {evGoing(detail) ? "You're going — tap to opt out" : "I'm in"}</span>
+              </PxButton>
+            )}
+            {evGoing(detail) && detail.host !== "you" && <div className="text-xs text-center pt-2.5" style={{ color: C.faint }}>You'll get a reminder before it starts.</div>}
           </div>
         </div>
       )}
@@ -884,9 +888,9 @@ function EventsSheet({ st, act, initialView, onClose }) {
 }
 
 function HistorySheet({ st, onClose }) {
-  const [month, setMonth] = useState(6);
+  const [month, setMonth] = useState(Object.keys(st.history?.[7] || {}).length ? 7 : 6);
   const [light, setLight] = useState(null);
-  const meta = MONTH_META[month];
+  const meta = monthMeta(month);
   const entries = st.history[month] || {};
   return (
     <div className="fixed inset-0 flex flex-col" style={{ zIndex: 48, paddingTop: "env(safe-area-inset-top)", ...TYPE, background: C.paper, animation: "sheetUp 0.28s ease both" }} {...swipeBack(onClose)}>
@@ -1104,7 +1108,7 @@ function AuthFlow({ core, onDone }) {
         <PxButton full onClick={() => { setMode("su-contact"); }}>Create account</PxButton>
         <PxButton full kind="ghost" onClick={() => { setMode("li"); }}>Log in</PxButton>
         <button onClick={() => onDone({ demo: true })} className="text-center text-xs font-semibold pt-2" style={{ ...TYPE, color: C.teal }}>Continue as demo Roy →</button>
-        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v3.3 · event flow</div>
+        <div className="text-center pt-1.5" style={{ fontSize: 10.5, color: C.faint }}>v3.4 · connected</div>
       </div>
     </AuthShell>
   );
@@ -1549,10 +1553,10 @@ function FeedScreen({ st, act }) {
 }
 
 /* ── COMPOSER: activity → camera → caption/tags ── */
-function ComposerSheet({ st, core, onPost, onClose }) {
-  const [step, setStep] = useState("pick");
+function ComposerSheet({ st, core, onPost, onClose, initialActivity }) {
+  const [step, setStep] = useState(initialActivity ? "camera" : "pick");
   const [q, setQ] = useState("");
-  const [activity, setActivity] = useState(null);
+  const [activity, setActivity] = useState(initialActivity || null);
   const [photo, setPhoto] = useState(undefined); // undefined = not chosen; null = pixel scene
   const [caption, setCaption] = useState("");
   const [withIds, setWithIds] = useState([]);
@@ -2284,9 +2288,9 @@ function NotifSheet({ st, act, onClose }) {
         )}
         <div className="px-4 pt-3">
           {st.notifs.map((n) => (
-            <button key={n.id} onClick={n.badge ? () => { act.spotlight(n.badge); onClose(); } : n.eventId ? () => act.openEventDetail(n.eventId) : undefined} className="w-full flex items-center gap-2.5 py-2.5 text-left" style={{ borderBottom: "1.5px solid rgba(32,24,15,0.12)" }}>
+            <button key={n.id} onClick={n.badge ? () => { act.spotlight(n.badge); onClose(); } : n.composeActivity ? () => act.composeFromNotif(n.composeActivity) : n.eventId ? () => act.openEventDetail(n.eventId) : undefined} className="w-full flex items-center gap-2.5 py-2.5 text-left" style={{ borderBottom: "1.5px solid rgba(32,24,15,0.12)" }}>
               <div className="shrink-0 flex items-center justify-center" style={{ width: 36, height: 36, background: n.badge ? "#FAF0D2" : C.field, borderRadius: 12 }}>
-                {n.badge ? <Trophy size={15} color={C.ink} /> : n.kind === "event" ? <CalendarDays size={15} color={C.teal} /> : n.kind === "likes" ? <Heart size={15} color={C.coral} fill={C.coral} /> : <UserPlus size={15} color={C.ink} />}
+                {n.badge ? <Trophy size={15} color={C.ink} /> : n.kind === "featured" ? <Star size={15} color={C.gold} fill={C.gold} /> : n.kind === "event" ? <CalendarDays size={15} color={C.teal} /> : n.kind === "likes" ? <Heart size={15} color={C.coral} fill={C.coral} /> : <UserPlus size={15} color={C.ink} />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm leading-snug" style={{ color: C.ink }}>{n.text}</div>
@@ -2782,7 +2786,7 @@ function SettingsSheet({ st, core, act, onClose }) {
         <div className="px-4 pt-4 flex flex-col gap-2">
           <PxButton full kind="danger" onClick={act.logout}><span className="inline-flex items-center gap-2"><LogOut size={14} /> Log out</span></PxButton>
         </div>
-        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp v3.3</div>
+        <div className="text-xs text-center pt-5 px-10 leading-relaxed" style={{ color: C.faint }}>ShowUp v3.4</div>
       </div>
     </div>
   );
@@ -2887,6 +2891,11 @@ function AppInner() {
       const now = Date.now();
       setEvents((evs) => {
         evs.forEach((e) => {
+          if (e.going.some((g) => g === "you") && e.at <= now && now - e.at < 45 * 60e3 && !promptedRef.current.has(e.id)) {
+            promptedRef.current.add(e.id);
+            setNotifs((ns) => [{ id: "evgo-" + e.id, kind: "event", composeActivity: e.activity, text: `${e.activity} just started — show up and prove it`, sub: e.place }, ...ns]);
+            setNotifSeen(false);
+          }
           if (e.going.some((g) => g === "you") && e.at > now && e.at - now < 60 * 60e3 && !remindedRef.current.has(e.id)) {
             remindedRef.current.add(e.id);
             setNotifs((ns) => [{ id: "ev-" + e.id, kind: "event", text: `Starting soon — ${e.activity} at ${e.place}`, sub: fmtWhen(e.at) }, ...ns]);
@@ -2968,7 +2977,9 @@ function AppInner() {
   const [events, setEvents] = useState([]);
   const [eventsOpen, setEventsOpen] = useState(false);
   const [eventsView, setEventsView] = useState("list");
+  const [composerSeed, setComposerSeed] = useState(null);
   const joinTimersRef = useRef([]);
+  const promptedRef = useRef(new Set());
   const [tick, setTick] = useState(0);
   const remindedRef = useRef(new Set());
   const [requests, setRequests] = useState(SEED_REQUESTS);
@@ -3024,6 +3035,7 @@ function AppInner() {
     setEvents(demo ? buildSeedEvents() : []);
     setEventsOpen(false); setEventsView("list"); remindedRef.current = new Set();
     joinTimersRef.current.forEach(clearTimeout); joinTimersRef.current = [];
+    promptedRef.current = new Set(); setComposerSeed(null);
     setNominatedId(null); setNominatedCat(null);
     setShopOpen(false); setNominateOpen(false); setBannerEditOpen(false); setWrappedOpen(false);
     setFriends(SEED_FRIENDS); setPosts(SEED_POSTS); setComments(SEED_COMMENTS); setPairs(SEED_PAIRS);
@@ -3069,6 +3081,14 @@ function AppInner() {
     openMemory: (post) => { setMemoryView(post); core.log("MEMORY_VIEW", post.id); },
     openEvents: () => { setEventsView("list"); setEventsOpen(true); },
     openEventDetail: (id) => { setEventsView(id); setEventsOpen(true); },
+    cancelEvent: (id) => {
+      setEvents((evs) => evs.filter((e) => e.id !== id));
+      setNotifs((ns) => ns.filter((n) => n.eventId !== id));
+      remindedRef.current.delete(id);
+      core.log("EVENT_CANCELED", id);
+      showToast("Event canceled.");
+    },
+    composeFromNotif: (activity) => { setNotifOpen(false); setComposerSeed(activity); setComposerOpen(true); },
     rsvp: (id) => {
       setEvents((evs) => evs.map((e) => {
         if (e.id !== id) return e;
@@ -3135,6 +3155,8 @@ function AppInner() {
       setNominatedId(post.id); setNominatedCat(cat);
       setNominateOpen(false);
       core.log("NOMINATION", `your ${post.id} → ${cat}`);
+      setNotifs((ns) => [{ id: "nom-" + post.id, kind: "featured", text: `Your entry is in — ${cat} winners announced Sunday`, sub: "Featured" }, ...ns]);
+      setNotifSeen(false);
       showToast(`Entered for ${cat} — winners Sunday. 🏅`);
     },
     openNotifs: () => { setNotifOpen(true); setNotifSeen(true); },
@@ -3188,9 +3210,23 @@ function AppInner() {
       setPosts((ps) => [newPost, ...ps]);
       core.log("POST_CREATED", activity);
       setComposerOpen(false); setTab("feed");
+      /* friends notice: a like lands soon, a comment follows */
+      const rct = [...friends].sort(() => Math.random() - 0.5);
+      if (rct[0]) joinTimersRef.current.push(setTimeout(() => {
+        setPosts((ps) => ps.map((p) => (p.id === newPost.id ? { ...p, likes: p.likes + 1, likedBy: rct[0].name } : p)));
+        setNotifs((ns) => [{ id: "pl-" + newPost.id, kind: "likes", text: `${rct[0].name} liked your post`, sub: "just now" }, ...ns.filter((n) => n.id !== "pl-" + newPost.id)]);
+        setNotifSeen(false);
+      }, 22000));
+      if (rct[1]) joinTimersRef.current.push(setTimeout(() => {
+        const lines = ["let's go 🔥", "love this", "consistency!!", "there it is", "W"];
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        setComments((cs) => ({ ...cs, [newPost.id]: [...(cs[newPost.id] || []), { id: Date.now(), author: rct[1].id, text: line, likes: 0, liked: false }] }));
+        setNotifs((ns) => [{ id: "pc-" + newPost.id, kind: "likes", text: `${rct[1].name} commented: "${line}"`, sub: "just now" }, ...ns]);
+        setNotifSeen(false);
+      }, 50000));
       if (!first) { showToast("Posted! Today was already counted."); return; }
       setWallet((w) => w + 10); core.log("COINS", "+10 · showed up today");
-      setHistory((h) => ({ ...h, 7: { ...h[7], 1: { activity, photo } } }));
+      { const dN = new Date(); const hm = dN.getMonth() + 1; const hd = dN.getDate(); setHistory((h) => ({ ...h, [hm]: { ...(h[hm] || {}), [hd]: { activity, photo } } })); }
       setMe((m) => ({ ...m, daysWeek: Math.min(7, m.daysWeek + 1) }));
       /* pairwise ticks + shared milestones */
       const pplNow = Object.fromEntries(friends.map((f) => [f.id, f]));
@@ -3214,6 +3250,8 @@ function AppInner() {
         core.log("BADGE_UNLOCKED", `${unlocked.name} · ${activity} T${ti + 1}`);
         setPosts((ps) => [ps[0], { id: `msyou-${Date.now()}`, type: "milestone", author: "you", time: "now", text: `You unlocked ${unlocked.name}`, sub: `${after} days of ${activity.toLowerCase()}, all-time — shared with friends`, activity, tier: ti + 1, hype: 0 }, ...ps.slice(1)]);
         core.log("MILESTONE_BROADCAST", unlocked.name);
+        setNotifs((ns) => [{ id: "nb-" + Date.now(), badge: { activity, tier: ti + 1, name: unlocked.name }, text: `New badge earned — ${unlocked.name}`, sub: "Tap to admire" }, ...ns]);
+        setNotifSeen(false);
         setTimeout(() => setSpot({ ...unlocked, locked: false }), 700);
       } else {
         const ni = TIER_DAYS.findIndex((t) => t > after);
@@ -3270,7 +3308,7 @@ function AppInner() {
             {progressOpen && <ProgressScreen st={st} act={{ ...act, openJourney: (a) => setJourneyFor(a) }} onClose={() => setProgressOpen(false)} />}
             {journeyFor && <JourneyScreen activity={journeyFor} count={progress[journeyFor] || 0} onSpotlight={(b) => setSpot(b)} onClose={() => setJourneyFor(null)} />}
             {notifOpen && <NotifSheet st={st} act={{ ...act, accept: (r) => { act.accept(r); }, spotlight: (b) => { setSpot({ ...b, locked: false }); } }} onClose={() => setNotifOpen(false)} />}
-            {composerOpen && <ComposerSheet st={st} core={core} onPost={act.post} onClose={() => setComposerOpen(false)} />}
+            {composerOpen && <ComposerSheet st={st} core={core} initialActivity={composerSeed} onPost={act.post} onClose={() => { setComposerOpen(false); setComposerSeed(null); }} />}
             {commentsFor && <CommentsSheet postId={commentsFor} st={st} core={core} onAdd={act.addComment} onLikeComment={act.likeComment} onClose={() => setCommentsFor(null)} onOpenPerson={(id) => { setCommentsFor(null); act.openPerson(id); }} />}
             {settingsOpen && <SettingsSheet st={st} core={core} act={act} onClose={() => setSettingsOpen(false)} />}
             {purchase && <PurchaseSheet purchase={purchase} me={me} onConfirm={act.confirmPurchase} onClose={() => setPurchase(null)} />}
